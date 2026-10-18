@@ -22,6 +22,7 @@ Lambda Web Functions と Event Functions を Aurora DSQL で比較する検証�
 CloudFormation のロールバックは時間がかかる。デプロイの前に、ローカルで次を確かめる。
 - `npm test`、`npm run typecheck`、`cdk synth`、`cdk diff`
 - バンドルしたコードの単体起動（DSQL は実クラスタにつないで確かめられる。手順は architecture.md）
+- **負荷生成のコードを変えたら、本番と同じ件数の最終段まで、ローカルで通す**（例: `node load/invoke.mjs http://127.0.0.1:<port> --path /noop --steps 500,2500 --step-seconds 60`、手元で `dist/web` を起動）。小さい規模では出ない不具合がある（`Math.max(...配列)` は約 12 万要素で例外になり、P1 の 1 回目が失敗した）。
 - IAM のリソース ARN の中身（意図したものだけに絞られているか）
 - 既存リソースとの名前の衝突（`aws lambda get-function`、`aws lambda-web get-web-function`、`aws logs describe-log-groups` など。読み取りのみ）
 

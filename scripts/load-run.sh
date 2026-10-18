@@ -109,10 +109,17 @@ if [[ -n "$out" ]]; then
 import json, sys
 out, task_id, exit_code, reason, times, *args = sys.argv[1:]
 results = []
+steps = []
 for line in open(out + ".log"):
     marker = line.find("RESULT_JSON ")
     if marker >= 0:
         results.append(json.loads(line[marker + len("RESULT_JSON "):]))
+    marker = line.find("STEP_JSON ")
+    if marker >= 0:
+        steps.append(json.loads(line[marker + len("STEP_JSON "):]))
+# A run that crashed before printing RESULT_JSON still leaves its finished steps (marked partial).
+if not results and steps:
+    results.append({"partial": True, "steps": steps})
 json.dump(results, open(out + ".json", "w"), indent=1)
 created, started, stopped = json.loads(times)
 json.dump(

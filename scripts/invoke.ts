@@ -13,7 +13,7 @@ import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { SignatureV4 } from "@smithy/signature-v4";
 import os from "node:os";
 import { parseArgs } from "node:util";
-import { countBy, quantile, runOpenLoop, type Result } from "./loadgen-lib.js";
+import { countBy, maxOf, quantile, runOpenLoop, type Result } from "./loadgen-lib.js";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -132,6 +132,8 @@ if (openLoop) {
     maxInflight,
     stopOnErrorRate,
     cpuSeconds,
+    // Provisional per-step summary (late responses are added to the final one); survives a crash further on.
+    onStep: (s) => console.log(`STEP_JSON ${JSON.stringify(s)}`),
     send: async (scheduledAt, step) => {
       const dispatchedAt = performance.now();
       const r = await once(true);
@@ -209,7 +211,7 @@ if (count === 1) {
     winEnvs.forEach((e) => seen.add(e));
     const lat = ok.map((r) => r.ms);
     const q = (p: number) => quantile(lat, p)?.toFixed(0) ?? "-";
-    const peak = Math.max(0, ...ok.map((r) => Number(r.body?.inFlight ?? 0)));
+    const peak = maxOf(ok.map((r) => Number(r.body?.inFlight ?? 0)));
     // DB columns stay "-" for the noop functions. acquire = time until a connection was ready.
     const dbs = ok.map(dbOf).filter((d) => d !== null);
     const newPct = dbs.length ? ((100 * dbs.filter((d) => d!.newConnection).length) / dbs.length).toFixed(0) : "-";
@@ -229,7 +231,7 @@ if (count === 1) {
 } else {
   const ok = results.filter((r) => r.status === 200);
   const envIds = new Set(ok.map((r) => r.body?.envId));
-  const maxInFlight = Math.max(0, ...ok.map((r) => Number(r.body?.inFlight ?? 0)));
+  const maxInFlight = maxOf(ok.map((r) => Number(r.body?.inFlight ?? 0)));
   const cold = ok.filter((r) => r.body?.coldStart).length;
   const lat = ok.map((r) => r.ms);
   const pct = (p: number) => quantile(lat, p)?.toFixed(0);

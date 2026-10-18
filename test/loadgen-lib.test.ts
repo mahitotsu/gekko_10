@@ -3,6 +3,7 @@ import {
   MIN_SAMPLES_FOR_STOP,
   countBy,
   failureKey,
+  maxOf,
   quantile,
   runOpenLoop,
   summarizeStep,
@@ -124,5 +125,34 @@ describe("runOpenLoop", () => {
       },
     });
     expect(out.steps[0].failures).toEqual({ "0": 20 });
+  });
+});
+
+describe("large runs", () => {
+  it("summarises a step with far more than 100,000 results without overflowing the stack", () => {
+    const n = 250_000;
+    const rs = Array.from({ length: n }, (_, i) => result({ body: { envId: `e${i % 7}`, inFlight: (i % 50) + 1 }, fromScheduleMs: i % 100 }));
+    const s = summarizeStep(0, 1600, 90, rs, { scheduled: n, sent: n, dropped: 0 });
+    expect(s.ok).toBe(n);
+    expect(s.peakInFlight).toBe(50);
+    expect(s.environments).toBe(7);
+  });
+
+  it("maxOf handles empty lists and a floor", () => {
+    expect(maxOf([])).toBe(0);
+    expect(maxOf([3, 9, 4])).toBe(9);
+    expect(maxOf([-5], -10)).toBe(-5);
+  });
+
+  it("reports each finished step through onStep", async () => {
+    const seen: number[] = [];
+    await runOpenLoop({
+      rates: [20, 20],
+      stepSeconds: 1,
+      maxInflight: 100,
+      onStep: (s) => seen.push(s.step),
+      send: async (_s, step) => result({ step }),
+    });
+    expect(seen).toEqual([0, 1]);
   });
 });

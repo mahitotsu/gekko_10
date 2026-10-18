@@ -53,6 +53,15 @@ export function countBy(rs: Result[]): Record<string, number> {
 type DbInfo = { newConnection?: boolean; acquireMs?: number; queryMs?: number };
 const dbOf = (r: Result) => (r.body?.db ?? null) as DbInfo | null;
 const numbers = (xs: (number | undefined)[]) => xs.filter((x): x is number => typeof x === "number");
+/**
+ * Largest value of a list. Math.max(...xs) throws "Maximum call stack size exceeded" once xs has more than about
+ * 100,000 entries, which a single step of a high-rate run reaches.
+ */
+export function maxOf(xs: number[], floor = 0): number {
+  let m = floor;
+  for (const x of xs) if (x > m) m = x;
+  return m;
+}
 
 export interface StepCounts {
   scheduled: number;
@@ -121,7 +130,7 @@ export function summarizeStep(
       : undefined,
     environments: new Set(ok.map((r) => r.body?.envId)).size,
     coldStarts: ok.filter((r) => r.body?.coldStart).length,
-    peakInFlight: Math.max(0, ...ok.map((r) => Number(r.body?.inFlight ?? 0))),
+    peakInFlight: maxOf(ok.map((r) => Number(r.body?.inFlight ?? 0))),
     loadgenCores: round(loadgenCores, 2),
   };
 }
@@ -139,6 +148,8 @@ export interface OpenLoopOptions {
   /** CPU time used by this process so far, in seconds (user + system). */
   cpuSeconds?: () => number;
   drainTimeoutMs?: number;
+  /** Called with each step's summary as soon as the step ends, so that partial results survive a later failure. */
+  onStep?: (summary: StepSummary) => void;
 }
 
 export interface OpenLoopOutcome {
@@ -210,6 +221,7 @@ export async function runOpenLoop(opts: OpenLoopOptions): Promise<OpenLoopOutcom
     const stepResults = results.filter((r) => r.step === step);
     const summary = summarizeStep(step, rate, opts.stepSeconds, stepResults, counts, (cpu() - cpuStart) / elapsedSec);
     summaries.push(summary);
+    opts.onStep?.(summary);
 
     if (opts.stopOnErrorRate !== undefined && stepResults.length >= MIN_SAMPLES_FOR_STOP) {
       const errorRate = (stepResults.length - summary.ok) / stepResults.length;

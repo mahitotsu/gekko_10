@@ -1,0 +1,8 @@
+2026-10-18T14:32:52 file:///app/invoke.mjs:25247
+2026-10-18T14:32:52     peakInFlight: Math.max(0, ...ok.map((r5) => Number(r5.body?.inFlight ?? 0))),
+2026-10-18T14:32:52                        ^
+2026-10-18T14:32:52 RangeError: Maximum call stack size exceeded
+2026-10-18T14:32:52     at summarizeStep (file:///app/invoke.mjs:25247:24)
+2026-10-18T14:32:52     at runOpenLoop (file:///app/invoke.mjs:25294:21)
+2026-10-18T14:32:52     at async file:///app/invoke.mjs:25416:15
+2026-10-18T14:32:52 Node.js v24.22.0

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app.js";
 import {
   DbError,
+  LOG_FULL_ERRORS_PER_MINUTE,
   classifyDbError,
   createDb,
   createDbFromEnv,
@@ -133,6 +134,28 @@ describe("each", () => {
     expect(err.trace.envConnectErrors).toEqual({ "53400": 1, "53300": 1, other: 0 });
     expect(log).toHaveBeenCalledTimes(3);
     expect(JSON.parse(log.mock.calls[0][0] as string)).toMatchObject({ event: "db_error", class: "53400", phase: "connect" });
+  });
+});
+
+describe("error logging", () => {
+  it("logs the first errors of each minute in full, counts the rest, and reports the count in the next window", async () => {
+    const { factories } = setup();
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    let clock = 1_000_000;
+    const db = createDb({ mode: "each", host: "h", factories, now: () => clock });
+    FakeClient.connectError = pgError("rate exceeded", "53400");
+    const total = LOG_FULL_ERRORS_PER_MINUTE + 15;
+    for (let i = 0; i < total; i++) await db.run("SELECT 1").catch(() => {});
+    expect(log).toHaveBeenCalledTimes(LOG_FULL_ERRORS_PER_MINUTE);
+
+    // The next minute starts with a summary of what was left out, then logs in full again.
+    clock += 61_000;
+    const err = (await db.run("SELECT 1").catch((e) => e)) as DbError;
+    const lines = log.mock.calls.map((c) => JSON.parse(c[0] as string));
+    expect(lines[LOG_FULL_ERRORS_PER_MINUTE]).toEqual({ event: "db_error_suppressed", mode: "each", count: 15 });
+    expect(lines[LOG_FULL_ERRORS_PER_MINUTE + 1]).toMatchObject({ event: "db_error", class: "53400" });
+    // Counting is not sampled: every failure is in the counters.
+    expect(err.trace.envConnectErrors["53400"]).toBe(total + 1);
   });
 });
 

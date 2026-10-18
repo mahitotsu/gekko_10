@@ -13,6 +13,12 @@ export const DB_ROWS = 1000;
 // DSQL closes connections after 60 minutes; retire ours a little earlier (same value as the connector's default).
 const MAX_CONNECTION_AGE_MS = 3300 * 1000;
 const POOL_IDLE_TIMEOUT_MS = 60_000;
+/**
+ * Error log lines per environment per minute that carry the full detail. When the DSQL connection rate is exceeded, a
+ * load test can fail hundreds of thousands of requests; the rest are only counted (see `envConnectErrors` in the
+ * response and `db_error_suppressed`), which keeps the log volume (and its cost) bounded.
+ */
+export const LOG_FULL_ERRORS_PER_MINUTE = 20;
 const CONNECT_TIMEOUT_MS = 5000;
 
 export interface DbTrace {
@@ -111,10 +117,32 @@ export function createDb(opts: {
   host: string;
   poolMax?: number;
   factories?: ConnectionFactories;
+  /** Clock for the error-log window; tests inject their own. */
+  now?: () => number;
 }): Db {
   const { mode, host } = opts;
   const factories = opts.factories ?? defaultFactories;
   const poolMax = opts.poolMax ?? 64;
+  const now = opts.now ?? Date.now;
+
+  let logWindowStart = Number.NEGATIVE_INFINITY;
+  let logged = 0;
+  let suppressed = 0;
+  function logError(entry: Record<string, unknown>) {
+    const t = now();
+    if (t - logWindowStart >= 60_000) {
+      if (suppressed > 0) console.log(JSON.stringify({ event: "db_error_suppressed", mode, count: suppressed }));
+      logWindowStart = t;
+      logged = 0;
+      suppressed = 0;
+    }
+    if (logged < LOG_FULL_ERRORS_PER_MINUTE) {
+      logged += 1;
+      console.log(JSON.stringify(entry));
+    } else {
+      suppressed += 1;
+    }
+  }
 
   let connectionsCreated = 0;
   const connectErrors: Record<ErrorClass, number> = { "53400": 0, "53300": 0, other: 0 };
@@ -129,10 +157,8 @@ export function createDb(opts: {
     if (phase === "connect") connectErrors[errorClass] += 1;
     const err = e as PgError;
     const dbError = new DbError(err?.message ?? String(e), errorClass, phase, err?.code, counters());
-    // One line per failure; successful requests are not logged to keep load-test log volume down.
-    console.log(
-      JSON.stringify({ event: "db_error", mode, phase, class: errorClass, sqlstate: err?.code ?? null, message: dbError.message }),
-    );
+    // Successful requests are not logged, and failures are sampled (LOG_FULL_ERRORS_PER_MINUTE), to keep the log volume down.
+    logError({ event: "db_error", mode, phase, class: errorClass, sqlstate: err?.code ?? null, message: dbError.message });
     return dbError;
   }
 

@@ -9,7 +9,8 @@
     "typecheck": "tsc --noEmit",
     "synth": "cdk synth",
     "invoke": "tsx scripts/invoke.ts",
-    "db-setup": "tsx scripts/db-setup.ts"
+    "db-setup": "tsx scripts/db-setup.ts",
+    "collect-metrics": "tsx scripts/collect-metrics.ts"
   },
   "dependencies": {
     "@aws/aurora-dsql-node-postgres-connector": "^0.1.9",

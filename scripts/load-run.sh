@@ -59,9 +59,10 @@ network=$(python3 -c '
 import json, sys
 print(json.dumps({"awsvpcConfiguration": {"subnets": sys.argv[1].split(","), "securityGroups": [sys.argv[2]], "assignPublicIp": "ENABLED"}}))
 ' "$subnets" "$sg")
+# The image's ENTRYPOINT is `node`, so the command names the script to run.
 overrides=$(python3 -c '
 import json, sys
-print(json.dumps({"containerOverrides": [{"name": "Loadgen", "command": sys.argv[1:]}]}))
+print(json.dumps({"containerOverrides": [{"name": "Loadgen", "command": ["/app/invoke.mjs"] + sys.argv[1:]}]}))
 ' "${args[@]}")
 
 task_arn=$(aws ecs run-task --cluster "$cluster" --task-definition "$task_def" --launch-type FARGATE \

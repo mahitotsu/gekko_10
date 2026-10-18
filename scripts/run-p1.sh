@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # P1 (step-up load): runs the six configurations one at a time, in a seeded random order, and saves everything.
+# NOTE: this orchestrates from the local machine (it must stay awake and logged in). For a long run, use
+# `npm run p1-start` instead: one Fargate task runs the whole plan by itself.
 #
 #   scripts/run-p1.sh --set 1 --seed 20261018 [--out results/2026-10-18] [--steps 25,50,100,200,400,800,1600]
 #                     [--step-seconds 90] [--first-wait SECONDS] [--dry-run]

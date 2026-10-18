@@ -137,7 +137,8 @@
 - IamAuth への直接 SigV4（上記 §7）
 - CloudFormation / CDK(L1) によるデプロイ（§4）。`aws lambda-web` は AWS CLI 2.38.1 で動作（2.31.35 では不可）
 - 東京のクォータ（§9）
-- メトリクス: `AWS/Lambda/Web/Usage` の `EndpointActiveEnvironments`（次元: FunctionName, EndpointName, ExecutionRegion）と、`AWS/Lambda/Web` の `EnvironmentConcurrentRequests`（次元: FunctionName）が出る。値はクライアント側の観測と一致した
+- メトリクス: `AWS/Lambda/Web/Usage` の `EndpointActiveEnvironments`（次元: FunctionName, EndpointName, ExecutionRegion）と、`AWS/Lambda/Web` の `EnvironmentConcurrentRequests`（次元: FunctionName）が出る。値はクライアント側の観測と一致した。180 秒の持続負荷（並行 100）では、1 分ごとの `EndpointActiveEnvironments` が 13 → 10 → 4 → 4、`EnvironmentConcurrentRequests` の最大が 11 → 26 → 26 → 26 で、アプリ側（環境 13 → 10 → 4、環境あたりの最大 約 10 → 約 25）と一致した。`ExecutedRequests` の合計 17,289 も、クライアントが送った件数と一致した。1 分より短い変化は見えない。
+- コスト計算に使う値（同じ負荷の時間帯、1 時間の集計）: `EnvironmentCPUTime` の Sum = 40,105 ms（1 リクエストあたり約 2.3 ms）、`EnvironmentActiveTime` の Sum = 1,832,869 ms（約 1,833 環境秒）、`EnvironmentMaxMemoryUsage` の最大 = 206 MB。us-east-1 の単価で概算すると約 $0.008（リクエスト $0.0052 + CPU $0.0011 + メモリ 最大でも $0.0014）。
 
 未確認:
 - CloudFormation でリビジョンを置き換えたときの、旧リビジョン削除とトラフィックの切り替え順序

@@ -1,5 +1,6 @@
 // SigV4-signed requests to an IAM-authenticated function URL or Web Function endpoint.
 // Usage: npm run invoke -- <base-url> [--path /noop] [--count 1] [--concurrency 1] [--region ap-northeast-1]
+//        [--duration SECONDS]  run for a fixed time instead of --count, and print a 10-second timeline
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { SignatureV4 } from "@smithy/signature-v4";
@@ -12,6 +13,7 @@ const { values, positionals } = parseArgs({
     count: { type: "string", default: "1" },
     concurrency: { type: "string", default: "1" },
     region: { type: "string", default: "ap-northeast-1" },
+    duration: { type: "string" },
   },
 });
 
@@ -23,7 +25,8 @@ if (!base) {
 
 const EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
 
-const count = Number(values.count);
+const duration = values.duration ? Number(values.duration) : undefined;
+const count = duration ? Number.POSITIVE_INFINITY : Number(values.count);
 const concurrency = Number(values.concurrency);
 const url = new URL(values.path!, base);
 
@@ -35,7 +38,10 @@ const signer = new SignatureV4({
   sha256: Sha256,
 });
 
-type Result = { status: number; ms: number; body: Record<string, unknown> | null };
+type Result = { status: number; ms: number; body: Record<string, unknown> | null; t: number };
+
+const runStart = performance.now();
+const elapsedSec = () => (performance.now() - runStart) / 1000;
 
 async function once(): Promise<Result> {
   const query: Record<string, string> = {};
@@ -63,7 +69,7 @@ async function once(): Promise<Result> {
     // Client-side failure (connect timeout etc.): count it, don't abort the whole run.
     const cause = (e as Error & { cause?: { code?: string } }).cause;
     console.error(`fetch failed: ${cause?.code ?? (e as Error).message}`);
-    return { status: 0, ms: performance.now() - started, body: null };
+    return { status: 0, ms: performance.now() - started, body: null, t: elapsedSec() };
   }
   const ms = performance.now() - started;
   let body: Record<string, unknown> | null = null;
@@ -75,19 +81,41 @@ async function once(): Promise<Result> {
   if (!res.ok) {
     console.error(`${res.status} ${res.headers.get("lambda-web-error-type") ?? ""} ${text.slice(0, 200)}`);
   }
-  return { status: res.status, ms, body };
+  return { status: res.status, ms, body, t: elapsedSec() };
 }
 
 const results: Result[] = [];
 let next = 0;
 await Promise.all(
   Array.from({ length: Math.min(concurrency, count) }, async () => {
-    while (next++ < count) results.push(await once());
+    while (duration ? elapsedSec() < duration : next++ < count) results.push(await once());
   }),
 );
 
 if (count === 1) {
   console.log(JSON.stringify(results[0].body, null, 2));
+} else if (duration) {
+  // Timeline per 10-second window: how many environments served requests, and how many requests
+  // each environment handled at the same time (inFlight is as of arrival, maxInFlight is the environment's peak).
+  const seen = new Set<unknown>();
+  console.log("window  req  err  envs(window) envs(total)  maxInFlight(window)  p50ms  p95ms");
+  for (let w = 0; w * 10 < duration + 10; w++) {
+    const inWin = results.filter((r) => r.t >= w * 10 && r.t < (w + 1) * 10);
+    if (inWin.length === 0) continue;
+    const ok = inWin.filter((r) => r.status === 200);
+    const winEnvs = new Set(ok.map((r) => r.body?.envId));
+    winEnvs.forEach((e) => seen.add(e));
+    const lat = ok.map((r) => r.ms).sort((a, b) => a - b);
+    const q = (p: number) => lat[Math.min(lat.length - 1, Math.floor((p / 100) * lat.length))]?.toFixed(0) ?? "-";
+    const peak = Math.max(0, ...ok.map((r) => Number(r.body?.inFlight ?? 0)));
+    console.log(
+      `${String(w * 10).padStart(4)}s ${String(inWin.length).padStart(5)} ${String(inWin.length - ok.length).padStart(4)} ${String(winEnvs.size).padStart(12)} ${String(seen.size).padStart(11)} ${String(peak).padStart(19)} ${q(50).padStart(6)} ${q(95).padStart(6)}`,
+    );
+  }
+  const perEnv = new Map<unknown, number>();
+  results.forEach((r) => r.body && perEnv.set(r.body.envId, Math.max(perEnv.get(r.body.envId) ?? 0, Number(r.body.maxInFlight ?? 0))));
+  const peaks = [...perEnv.values()].sort((a, b) => a - b);
+  console.log(`environments: ${perEnv.size}, per-environment peak concurrency: min ${peaks[0]}, median ${peaks[Math.floor(peaks.length / 2)]}, max ${peaks[peaks.length - 1]}`);
 } else {
   const ok = results.filter((r) => r.status === 200);
   const envIds = new Set(ok.map((r) => r.body?.envId));

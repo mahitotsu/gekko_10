@@ -1,5 +1,5 @@
 {
-  "app": "npm run -s bundle && npx tsx bin/app.ts",
+  "app": "npm run -s bundle && node scripts/bundle-load.mjs && npx tsx bin/app.ts",
   "context": {
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true
   }

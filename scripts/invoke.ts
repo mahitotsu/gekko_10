@@ -4,6 +4,7 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { SignatureV4 } from "@smithy/signature-v4";
+import os from "node:os";
 import { parseArgs } from "node:util";
 
 const { values, positionals } = parseArgs({
@@ -57,6 +58,7 @@ const quantile = (xs: number[], p: number) => {
   return a.length ? a[Math.min(a.length - 1, Math.floor((p / 100) * a.length))] : undefined;
 };
 
+const cpuStart = process.cpuUsage();
 const runStart = performance.now();
 const elapsedSec = () => (performance.now() - runStart) / 1000;
 
@@ -101,6 +103,13 @@ async function once(): Promise<Result> {
   return { status: res.status, ms, body, t: elapsedSec() };
 }
 
+// Average number of CPU cores this load generator used. Close to the cores available means the generator itself
+// is the bottleneck and the measured latency/throughput is not trustworthy.
+function loadgenCores(): number {
+  const used = process.cpuUsage(cpuStart);
+  return (used.user + used.system) / 1e6 / elapsedSec();
+}
+
 const results: Result[] = [];
 let next = 0;
 await Promise.all(
@@ -139,6 +148,7 @@ if (count === 1) {
   const peaks = [...perEnv.values()].sort((a, b) => a - b);
   const failed = results.filter((r) => r.status !== 200);
   if (failed.length) console.log(`failures: ${JSON.stringify(countBy(failed))}`);
+  console.log(`load generator: ${loadgenCores().toFixed(2)} cores used on average (${os.availableParallelism()} available)`);
   console.log(`environments: ${perEnv.size}, per-environment peak concurrency: min ${peaks[0]}, median ${peaks[Math.floor(peaks.length / 2)]}, max ${peaks[peaks.length - 1]}`);
 } else {
   const ok = results.filter((r) => r.status === 200);
@@ -157,6 +167,8 @@ if (count === 1) {
         distinctEnvironments: envIds.size,
         maxInFlightObserved: maxInFlight,
         coldStarts: cold,
+        loadgenCoresUsed: Number(loadgenCores().toFixed(2)),
+        loadgenCoresAvailable: os.availableParallelism(),
         latencyMs: { p50: pct(50), p95: pct(95), p99: pct(99) },
       },
       null,

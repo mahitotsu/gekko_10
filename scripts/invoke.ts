@@ -7,12 +7,15 @@
 //        --steps 25,50,100 [--step-seconds 90]       a ramp, one rate per step
 //        [--max-inflight 2000]                       drop (and count) new requests while this many are in flight
 //        [--stop-on-error-rate 0.5]                  stop the ramp after a step whose failure share reaches this
+// All modes share one connection pool: --max-connections N (default 256) caps the sockets opened to the target, so a
+// momentary stall cannot turn into a connection storm; waiting requests queue in the client and count in the latency.
 // Prints a table and one `RESULT_JSON {...}` line with per-step summaries.
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { defaultProvider } from "@aws-sdk/credential-provider-node";
 import { SignatureV4 } from "@smithy/signature-v4";
 import os from "node:os";
 import { parseArgs } from "node:util";
+import { Agent, fetch as undiciFetch } from "undici";
 import { countBy, maxOf, quantile, runOpenLoop, type Result } from "./loadgen-lib.js";
 
 const { values, positionals } = parseArgs({
@@ -27,6 +30,7 @@ const { values, positionals } = parseArgs({
     steps: { type: "string" },
     "step-seconds": { type: "string" },
     "max-inflight": { type: "string", default: "2000" },
+    "max-connections": { type: "string", default: "256" },
     "stop-on-error-rate": { type: "string" },
   },
 });
@@ -55,6 +59,16 @@ const signer = new SignatureV4({
   sha256: Sha256,
 });
 
+// A bounded, long-lived connection pool. Without a cap, a stall of about a second at 1,600 requests/s opened
+// hundreds of new TLS connections at once, and the generator then failed with connect timeouts (docs/findings.md 3-4).
+const agent = new Agent({
+  connections: Number(values["max-connections"]),
+  pipelining: 1,
+  keepAliveTimeout: 60_000,
+  keepAliveMaxTimeout: 600_000,
+  connect: { timeout: 30_000 },
+});
+
 const startedAt = new Date().toISOString();
 const cpuStart = process.cpuUsage();
 const runStart = performance.now();
@@ -79,10 +93,10 @@ async function once(quiet: boolean): Promise<Result> {
     },
   });
   const started = performance.now();
-  let res: Response;
+  let res: Awaited<ReturnType<typeof undiciFetch>>;
   let text: string;
   try {
-    res = await fetch(url, { headers: signed.headers as Record<string, string> });
+    res = await undiciFetch(url, { headers: signed.headers as Record<string, string>, dispatcher: agent });
     text = await res.text();
   } catch (e) {
     // Client-side failure (connect timeout etc.): count it, don't abort the whole run.

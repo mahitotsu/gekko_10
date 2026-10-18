@@ -1,0 +1,17 @@
+{
+ "taskId": "d9a2d231e102484da1563a7fc94acf9a",
+ "args": [
+  "https://readg4l3ek2okbazkl5y5gvbxm0usold.lambda-url.ap-northeast-1.on.aws",
+  "--path",
+  "/noop",
+  "--steps",
+  "25,50,100,200,400,800,1600",
+  "--step-seconds",
+  "90"
+ ],
+ "exitCode": "137",
+ "stoppedReason": "load-run.sh cleanup",
+ "createdAt": "2026-10-19T00:15:38.180000+09:00",
+ "startedAt": "2026-10-19T00:15:52.053000+09:00",
+ "stoppedAt": "2026-10-19T00:18:10.110000+09:00"
+}

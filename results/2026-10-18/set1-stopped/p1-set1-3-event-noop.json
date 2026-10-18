@@ -1,0 +1,35 @@
+[
+ {
+  "partial": true,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 25,
+    "seconds": 90,
+    "scheduled": 2250,
+    "sent": 2250,
+    "dropped": 0,
+    "completed": 2250,
+    "ok": 2250,
+    "failures": {},
+    "achievedRps": 25,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "latencyMs": {
+     "p50": 12.6,
+     "p95": 18,
+     "p99": 27.3
+    },
+    "serviceMs": {
+     "p50": 11.8,
+     "p95": 17.1,
+     "p99": 25.7
+    },
+    "environments": 13,
+    "coldStarts": 13,
+    "peakInFlight": 1,
+    "loadgenCores": 0.05
+   }
+  ]
+ }
+]

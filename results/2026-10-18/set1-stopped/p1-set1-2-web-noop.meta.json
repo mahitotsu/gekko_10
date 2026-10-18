@@ -1,0 +1,17 @@
+{
+ "taskId": "403496e15558474d93a48df7ed664623",
+ "args": [
+  "https://bdzmbtr6t61tbb4d.g0s.lambda-web.ap-northeast-1.on.aws",
+  "--path",
+  "/noop",
+  "--steps",
+  "25,50,100,200,400,800,1600",
+  "--step-seconds",
+  "90"
+ ],
+ "exitCode": "0",
+ "stoppedReason": "Essential container in task exited",
+ "createdAt": "2026-10-18T23:59:05.111000+09:00",
+ "startedAt": "2026-10-18T23:59:20.102000+09:00",
+ "stoppedAt": "2026-10-19T00:10:16.840000+09:00"
+}

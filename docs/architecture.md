@@ -106,6 +106,7 @@
 - タスクロール: 6 つの関数に絞った `lambda:InvokeFunctionUrl`（Event）と `lambda:InvokeWebFunctionEndpoint`（Web）のみ。
 - イメージ: `load/Dockerfile`。`scripts/bundle-load.mjs` が `invoke.ts` を 1 ファイル（`load/invoke.mjs`）にまとめる。CDK のブートストラップ用 ECR に push される。
 - `scripts/load-run.sh [--max-seconds N] -- <invoke.ts の引数>`: スタックの出力からクラスタ・サブネットなどを取り、`assignPublicIp=ENABLED` で起動して、終了を待ち、CloudWatch Logs の出力を表示する。最大実行時間（既定は `--duration` + 180 秒、なければ 600 秒）を超えたとき、Ctrl-C のとき、エラーのときは `stop-task` で止める。
+- 接続は `undici` の `Agent` で上限を設ける（`--max-connections`、既定 256。keep-alive 60 秒、接続のタイムアウト 30 秒）。上限がないと、一時的な遅延が新規接続の集中を招き、生成側が詰まる（[findings.md](findings.md) §3-4）。
 - 生成側が飽和していないかは、`invoke.ts` の出力（`loadgenCoresUsed` / `loadgenCoresAvailable`、`--duration` では `load generator:` 行）で確認する。
 
 ## 8. 設計の判断と理由

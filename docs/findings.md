@@ -123,12 +123,27 @@
 - 取得日 10-18、価格表の公開日 09-11。`aws pricing get-products --region us-east-1 --service-code <code> --filters Type=TERM_MATCH,Field=usagetype,Value=<usagetype>`
 - 2 vCPU / 4 GB のタスク 1 つは、1 時間あたり約 $0.128（2 × 0.05056 + 4 × 0.00553 + 0.005）。
 - Fargate On-Demand vCPU のクォータは 140（`aws service-quotas get-service-quota --service-code fargate --quota-code L-3032A538`）。2 vCPU のタスクは最大 70 並列。
-- 東京の Lambda の単価と、DSQL の DPU 単価は、まだ取得していない。
+- Lambda と DSQL の単価は §3-3。
+
+### 3-3. Lambda と DSQL の単価（東京、AWS Price List API）
+| 項目 | 単価 | 出典（usagetype） |
+|---|---|---|
+| Event（arm64）リクエスト | $0.20 / 100 万 | `APN1-Request-ARM`（`--service-code AWSLambda`） |
+| Event（arm64）時間 | $0.0000133334 / GB・秒（最初の階層） | `APN1-Lambda-GB-Second-ARM` |
+| Web リクエスト | $0.30 / 100 万 | `APN1-Lambda-Web-Request-ARM` |
+| Web CPU | $0.0000322421 / vCPU・秒 | `APN1-Lambda-Web-vCPU-Second-ARM` |
+| Web メモリ | $0.0000042688 / GB・秒 | `APN1-Lambda-Web-Memory-GB-Second-ARM` |
+| DSQL | $0.00001 / DPU、ストレージ $0.40 / GB・月 | `APN1-DSQL-DistributedProcessingUnits`、`APN1-DSQL-Storage-ByteHrs`（`--service-code AuroraDSQL`） |
+| CloudWatch Logs 取り込み | $0.76 / GB | `APN1-DataProcessing-Bytes`（`--service-code AmazonCloudWatch`） |
+
+- 取得日 10-18。価格表の公開日は Lambda が 10-16、DSQL が 09-11、CloudWatch が 10-07。
+- 東京の Web の単価は、us-east-1 の値（CPU $0.0000276944、メモリ $0.0000036667、リクエスト $0.30 / 100 万）より高い（CPU +16%、メモリ +16%）。コスト比較は東京の単価で行う。
+- Event の同時実行数のクォータは 1,000（`aws lambda get-account-settings`）。
+- DSQL の 1 リクエスト（読み取り）あたりの DPU の実績: 10-18 の少数の呼び出しで 0.018〜0.035 DPU（`TotalDPU`、`ReadOnlyTransactions`）。
 
 ## 4. 未確認
 - `53400` / `53300` が実際にどの SQLSTATE とメッセージで返るか（負荷試験で接続レートに達したときに確認する）。
 - `reuse` の再接続（凍結から復帰した後に接続が切れていた場合）の実機での挙動。単体テストでは確認済み。
-- 東京の Lambda（リクエスト、Arm の GB 秒、Web Functions の CPU・メモリ）と DSQL の DPU の単価。
 - 関数URLに追加料金がないこと。
 - CloudFormation でリビジョンを置き換えたときの、旧リビジョン削除とトラフィックの切り替え順序。
 - Web のシステムログのイベント（`platform.*`）の実際の形式。

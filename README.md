@@ -54,6 +54,12 @@ npm run invoke -- <URL> --path /db/read --count 20 --concurrency 4
 npx cdk deploy Gekko10LoadStack   # 初回のみ
 scripts/load-run.sh -- <URL> --path /db/read --duration 300 --concurrency 100
 ```
+数時間かかる負荷試験は、1 つの Fargate タスクが最後まで実行するので、**PC がスリープしても、AWS の認証が切れても止まりません**。
+```sh
+npm run p1-start -- --sets 1,2 --seed 20261019 --dry-run   # 計画・終了の目安・費用の確認
+npm run p1-start -- --sets 1,2 --seed 20261019             # 起動
+npm run p1-fetch -- --task <タスク ID> --wait              # 後日、回収（ログは 30 日、メトリクスは約 15 日以内に）
+```
 **負荷をかけると Lambda・DSQL・Fargate の料金が発生します。** 実行前に規模と費用を見積もってください。
 
 ### 片付ける

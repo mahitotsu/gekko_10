@@ -1,0 +1,15 @@
+{
+ "taskId": "c5bc5aa44cdc44339987b34f56b78c5d",
+ "args": [
+  "https://bdzmbtr6t61tbb4d.g0s.lambda-web.ap-northeast-1.on.aws",
+  "--path",
+  "/noop"
+ ],
+ "exitCode": "0",
+ "timedOut": false,
+ "aborted": false,
+ "startedAt": "2026-10-18T15:43:11.681Z",
+ "stoppedAt": "2026-10-18T15:43:21.778Z",
+ "waitSeconds": 300,
+ "complete": true
+}

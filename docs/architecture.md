@@ -109,6 +109,14 @@
 - 接続は `undici` の `Agent` で上限を設ける（`--max-connections`、既定 256。keep-alive 60 秒、接続のタイムアウト 30 秒）。上限がないと、一時的な遅延が新規接続の集中を招き、生成側が詰まる（[findings.md](findings.md) §3-4）。
 - 生成側が飽和していないかは、`invoke.ts` の出力（`loadgenCoresUsed` / `loadgenCoresAvailable`、`--duration` では `load generator:` 行）で確認する。
 
+### 7b. P1 を 1 つのタスクで最後まで流す（`p1-start` / `p1-runner` / `p1-fetch`）
+数時間かかる実行を、ローカル PC のスリープや AWS の認証の期限に左右されずに行うための仕組み。
+- `scripts/p1-start.ts`（ローカル）: 計画を作り（`scripts/p1-plan.ts`。シードつきの乱数で順序を決め、待ちは 5 分、「毎回接続」の後は 15 分）、**1 つの Fargate タスクとして起動**する。タスク ID と、停止・回収のコマンドを表示する。`--dry-run` で、順序・待ち・終了の目安・費用だけを確認できる。すでにタスクが動いていれば起動しない（DSQL を共有するため）。
+- `scripts/p1-runner.ts`（コンテナ内）: 計画どおりに待ち、`invoke.mjs` を回ごとの子プロセスとして実行し、出力を CloudWatch Logs に残す（`P1_RUN_BEGIN` / `P1_RUN_END` で各回を囲む）。全体の締め切り（所要時間 + 15 分）と、各回の締め切り（段の合計 + 3 分）で自分で止まる。SIGTERM（`aws ecs stop-task`）でも、実行中の回を止めて終了する。
+- `scripts/p1-fetch.ts`（ローカル）: 終了後にログを取得し、回ごとのファイル（`load-run.sh --out` と同じ形式）に分け、各回の時間帯のメトリクスを保存する。`--wait` で、タスクの終了を待ってから実行できる。
+- 回収の期限: ログは 30 日、1 分粒度のメトリクスは約 15 日。AWS へのログイン（`aws sso login`）は回収時に必要。
+- 使い方は「運用の手順」の「P1 を流す」。
+
 ## 8. 設計の判断と理由
 | 判断 | 理由 |
 |---|---|
@@ -217,6 +225,18 @@ scripts/load-run.sh [--max-seconds N] -- <invoke.ts の引数>
 scripts/load-run.sh -- https://<endpoint> --path /db/read --duration 300 --concurrency 100
 ```
 出力の `loadgenCoresUsed` が `loadgenCoresAvailable`（2）に近いときは、生成側が飽和しているので、その結果は採用しない。
+
+### P1 を流す（数時間かかる実行）
+```sh
+npm run p1-start -- --sets 1,2 --seed 20261019 --dry-run    # 順序・待ち・終了の目安・費用の確認
+npm run p1-start -- --sets 1,2 --seed 20261019              # 起動（タスク ID が表示される）
+# ここで PC をスリープしても、ログアウトしても、実行は続く
+aws sso login
+npm run p1-fetch -- --task <タスク ID> --wait               # 終了を待って回収（results/<日付>/）
+```
+- 1 セット（6 構成）は約 2 時間。複数セットを 1 つのタスクにまとめると、その分だけ長くなる（4 時間で Fargate は約 $0.5）。
+- 途中で止めるとき: `p1-start` が表示した `aws ecs stop-task ...`。
+- 小さな確認用に、ローカルで進める `scripts/run-p1.sh` も残している（PC を起こしておく必要がある）。
 
 ### ログとメトリクス
 - Event のログ: `/aws/lambda/<関数名>`（`REPORT` 行に Init Duration）

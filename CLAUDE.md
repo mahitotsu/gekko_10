@@ -44,9 +44,16 @@ CloudFormation のロールバックは時間がかかる。デプロイの前�
 - ウォームアップ回を捨てる。生成側が飽和した結果は採用しない（`loadgenCoresUsed` が `loadgenCoresAvailable` に近い）。
 - 毎回接続で DSQL の接続レート（100/秒）に達したら、回避せず結果として記録する（53400 と 53300 を区別する）。
 
+## 長い負荷試験（P1）
+- 数時間かかる実行は、`npm run p1-start`（1 つの Fargate タスクが最後まで実行）で始める。ローカルから進行する `scripts/run-p1.sh` は、PC のスリープや認証の期限で止まるので、小さな確認用。
+- 起動前に `--dry-run` で、順序・待ち・終了の目安・費用を確認し、**費用の見積もりと承認を得てから**起動する。
+- 終了後は `npm run p1-fetch -- --task <ID> --wait`（ログは 30 日、1 分粒度のメトリクスは約 15 日以内）。回収には `aws sso login` が要る。
+- 「毎回接続」の実行の後は、DSQL の接続の枠の回復が遅いので 15 分あける（計画に組み込み済み）。
+
 ## よく使うコマンド
 - `npm test` / `npm run typecheck` / `npm run bundle`
 - `npm run invoke -- <URL> --path /noop`（SigV4 署名つき。`--count` / `--concurrency` / `--duration`）
 - `npm run db-setup -- <クラスタのエンドポイント>`
-- `scripts/load-run.sh -- <URL> ...`（東京の Fargate タスクから `invoke.ts` を実行）
+- `scripts/load-run.sh -- <URL> ...`（東京の Fargate タスクから `invoke.ts` を 1 回実行）
+- `npm run p1-start` / `npm run p1-fetch`（P1 を 1 タスクで最後まで流す / 回収）
 - 認証情報: `eval "$(aws configure export-credentials --format env)"`

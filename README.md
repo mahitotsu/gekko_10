@@ -34,7 +34,7 @@ Lambda Web Functions と Event Functions（関数URL）を、Aurora DSQL をバ�
 
 ## 前提
 - Node.js 24、npm
-- AWS CLI v2（Web Functions の `lambda-web` コマンドを使うなら新しいバージョン。このマシンは 2.31.35 で古い可能性が高い。(第三者情報) 2.37.13 以降が必要。`aws update` などで更新する）
+- AWS CLI v2 の新しいバージョン（`lambda-web` コマンドが必要。2.31.35 では使えず、2.38.1 で動作を確認した。apt 版は古いので、公式インストーラで入れる）
 - AWS の認証情報と、ap-northeast-1 での `cdk bootstrap`
 
 ## ローカルでの確認
@@ -88,18 +88,18 @@ curl -i "<Web の EndpointUrl>/noop"   # 403
 ```
 
 ### 2. SigV4 署名付きリクエスト
-`scripts/invoke.ts` は両方に使える（サービス名は `lambda`、`x-amz-content-sha256` を常に付ける。Web Functions では必須）。
+`scripts/invoke.ts` は両方に使える（サービス名は `lambda`、`x-amz-content-sha256` を常に付ける。Web Functions では必須）。ヘッダの値は空ボディの SHA-256 にする。**関数URLは `UNSIGNED-PAYLOAD` を付けると署名不一致で 403 になる**（実機で確認）ので、両方に通る実際のハッシュを使っている。
 ```sh
 npm run invoke -- https://<id>.lambda-url.ap-northeast-1.on.aws --path /noop
 npm run invoke -- https://<id>.<...>.lambda-web.ap-northeast-1.on.aws --path /noop
 npm run invoke -- <url> --path "/wait?ms=500"
 ```
-curl で試す場合（認証情報は環境変数から。一時認証情報なら `x-amz-security-token` も必要。未確認の手順）:
+curl で試す場合（関数URLで確認済み。SSO なら `eval "$(aws configure export-credentials --format env)"` で認証情報を環境変数に出す。一時認証情報なので `x-amz-security-token` が必要）:
 ```sh
 curl --aws-sigv4 "aws:amz:ap-northeast-1:lambda" \
   --user "$AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY" \
   -H "x-amz-security-token: $AWS_SESSION_TOKEN" \
-  -H "x-amz-content-sha256: UNSIGNED-PAYLOAD" \
+  -H "x-amz-content-sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" \
   "<url>/noop"
 ```
 
@@ -112,10 +112,11 @@ npm run invoke -- <url> --path "/wait?ms=1000" --count 50 --concurrency 50
 
 | | 期待 |
 |---|---|
-| Web Functions | 環境数が少なく（動的な上限による。最初は保守的で、増えることがある）、`maxInFlightObserved` が 1 より大きい |
+| Web Functions | 環境内で同時に処理される（`maxInFlightObserved` が 1 より大きい）。ただし最初は動的な上限が保守的で、環境数は並行数の半分程度、同時処理は 2〜3 程度だった（実測） |
 | Event Functions | 環境が並行数に近い数に増え、`maxInFlightObserved` は常に 1 |
 
-2 回目以降の方が Web の環境数は少なくなる（学習された同時実行数の上限が保持されるため）。
+学習された同時実行数の上限は関数に保持されるので、繰り返すほど Web の環境数は減る可能性がある。実測では 3 回続けても 24〜26 環境だった（詳細は [docs/plan.md](docs/plan.md) の「初回の実機観測」）。
+手元からのレイテンシは、新規接続の確立を含むので比較には使えない。
 
 ### 4. ログとメトリクス
 - Event: `/aws/lambda/gekko10-event-noop`（`REPORT` 行に Init Duration）

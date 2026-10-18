@@ -21,6 +21,8 @@ if (!base) {
   process.exit(2);
 }
 
+const EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
 const count = Number(values.count);
 const concurrency = Number(values.concurrency);
 const url = new URL(values.path!, base);
@@ -46,13 +48,23 @@ async function once(): Promise<Result> {
     query,
     headers: {
       host: url.hostname,
-      // Required by Web Function endpoints even for empty bodies.
-      "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+      // Required by Web Function endpoints even for empty bodies. Function URLs reject UNSIGNED-PAYLOAD
+      // (signature mismatch), so send the real SHA-256 of the empty body, which both accept.
+      "x-amz-content-sha256": EMPTY_BODY_SHA256,
     },
   });
   const started = performance.now();
-  const res = await fetch(url, { headers: signed.headers as Record<string, string> });
-  const text = await res.text();
+  let res: Response;
+  let text: string;
+  try {
+    res = await fetch(url, { headers: signed.headers as Record<string, string> });
+    text = await res.text();
+  } catch (e) {
+    // Client-side failure (connect timeout etc.): count it, don't abort the whole run.
+    const cause = (e as Error & { cause?: { code?: string } }).cause;
+    console.error(`fetch failed: ${cause?.code ?? (e as Error).message}`);
+    return { status: 0, ms: performance.now() - started, body: null };
+  }
   const ms = performance.now() - started;
   let body: Record<string, unknown> | null = null;
   try {

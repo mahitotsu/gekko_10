@@ -52,6 +52,9 @@
   - Revision の全プロパティは「更新で置き換え」。
   - Endpoint の `RevisionWeights` は更新で無停止。`AutoDeploymentMode` は CFN にない。
   - (第三者) コードを変えると CFN は新しいリビジョンを作ってエンドポイントを付け替え、古いリビジョンを削除する。ネイティブの重み付き（カナリア）は使いにくい。 [Steele]
+  - **実機で確認済み（2026-10-18）**: 上の 3 リソースと S3 バケットの構成で、初回のデプロイが成功した（Revision と Endpoint は Active）。CDK の検証が出す `Unknown resource type 'AWS::Lambda::WebFunction'`（F3006）の警告は、CDK 側のスキーマが古いだけで、デプロイには影響しない。
+  - **CDK の `BucketDeployment`（`extract: false`）で S3 にコードを置く場合**: `objectKeys` が返すのは zip の**ファイル名だけ**で、`destinationKeyPrefix` は含まれない。出力先のキーは「プレフィックス + ファイル名」なので、プレフィックスを付けると Revision が存在しないキーを探して失敗する（実際に失敗した）。プレフィックスを付けずバケット直下に置けば一致する。
+  - CloudFormation のロググループの `Arn` 属性は `:*` で終わる。IAM に使うときは `:*` を足さない。
 - **CDK**: aws-cdk-lib 2.273.0 に L1 の `CfnWebFunction` / `CfnWebFunctionRevision` / `CfnWebFunctionEndpoint` がある。L2 はない。SAM には `AWS::Serverless::WebFunction` がある（第三者）。このリポジトリは L1 で書いた。
 
 ## 5. HTTP
@@ -86,7 +89,8 @@
 - `ApplicationManaged`: Lambda は認証しない（誰でも呼べる）。リソースポリシーも評価されない。
 - 公開されたリソースポリシー（Principal `*` など）は付けられない。
 - CloudFront を前に置く場合は OAC（origin type `lambda`、署名は `always-amz-auth`）。
-- 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。**[DG] を採る**（実機での確認はデプロイ後）。
+- 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。**[DG] を採る**。**実機で確認済み（2026-10-18）**: IamAuth のエンドポイントは、署名なしが 403、サービス名 `lambda` の SigV4 署名付きが 200。
+- 実機で分かった差（関数URLとの違い）: Web Functions は `x-amz-content-sha256` が必須だが、**関数URLは `UNSIGNED-PAYLOAD` を付けると署名不一致で 403 になる**（付けない、または空ボディの実際の SHA-256 `e3b0c442…b855` なら 200）。両方に通る値として、空ボディの実際の SHA-256 を使う。
 
 ## 8. メトリクスとログ
 [DG web-functions-monitoring.html, web-functions-monitoring-metrics.html]
@@ -117,6 +121,7 @@
 | 1 エンドポイントが重みを割り当てるリビジョン | 2 | 不可 |
 
 - **新規アカウントでは低く設定される**（使用実績に応じて自動で引き上げられる）。(第三者) 新しいアカウントで 200 vCPU（100 環境）/ 10,000 RPS だった。 [Steele]
+- **このアカウントの実測（ap-northeast-1、2026-10-18）**: `maxTotalArmVCpus` = 200（= 100 環境）、`maxTotalRateLimit` = 10,000 RPS、`maxEndpointsPerFunction` = 10、`maxRevisionsPerFunction` = 50。ドキュメントの既定値（2,000 vCPU / 100,000 RPS）より低い。大きな負荷試験の前に引き上げの申請が要る。
 - 確認: `aws lambda-web get-web-account-settings --region ap-northeast-1`（`GET /2025-03-07/web-account-settings`）。レスポンスは `accountQuotas{maxEndpointsPerFunction, maxRevisionsPerFunction, maxTotalArmVCpus, maxTotalRateLimit}` と `accountUsage{functionCount}`。Service Quotas のコンソールにも出る。
 
 ## 10. 料金
@@ -127,9 +132,14 @@
 - データ転送は EC2 の料金に準ずる
 - **東京の単価はページに載っていない**。AWS Price List API（`AWSLambda` サービス）で取得する必要がある。未確認。
 
-## 11. 未確認事項
-- IamAuth の直接 SigV4 が関数 URL と同じ署名方式で通るか（デプロイ後に `scripts/invoke.ts` で確認）
-- `lambda-web` を使う CLI のバージョン要件（2.37.13 は第三者の情報）
-- CloudFormation の検証ツールが Web Functions のリソースタイプを未登録として警告を出す（`cdk synth` 時、F3006）。動作には影響しないが、デプロイ時にスキーマが通るかは未確認
+## 11. 確認状況
+確認済み（2026-10-18、実機）:
+- IamAuth への直接 SigV4（上記 §7）
+- CloudFormation / CDK(L1) によるデプロイ（§4）。`aws lambda-web` は AWS CLI 2.38.1 で動作（2.31.35 では不可）
+- 東京のクォータ（§9）
+- メトリクス: `AWS/Lambda/Web/Usage` の `EndpointActiveEnvironments`（次元: FunctionName, EndpointName, ExecutionRegion）と、`AWS/Lambda/Web` の `EnvironmentConcurrentRequests`（次元: FunctionName）が出る。値はクライアント側の観測と一致した
+
+未確認:
 - CloudFormation でリビジョンを置き換えたときの、旧リビジョン削除とトラフィックの切り替え順序
-- 東京リージョンでの初期のクォータ値
+- 東京の単価（Price List API で取得する）
+- システムログのイベント（`platform.*`）の実際の形式

@@ -59,10 +59,11 @@ export class WebFunctionService extends Construct {
     );
 
     // extract: false keeps the zip as a single object; its key contains the content hash.
+    // No destinationKeyPrefix: objectKeys returns only the zip's file name, so the object must sit at the bucket root
+    // for that name to be the real S3 key.
     const deployment = new s3deploy.BucketDeployment(this, "CodeDeployment", {
       sources: [s3deploy.Source.asset(props.codePath)],
       destinationBucket: bucket,
-      destinationKeyPrefix: "code",
       extract: false,
       prune: false,
     });
@@ -84,11 +85,10 @@ export class WebFunctionService extends Construct {
     role.addToPolicy(
       new iam.PolicyStatement({
         actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+        // Same two resources as the minimal policy in the Web Functions docs. logGroupArn already ends in ":*".
         resources: [
-          `${centralLogGroup.logGroupArn}`,
-          `${centralLogGroup.logGroupArn}:*`,
+          centralLogGroup.logGroupArn,
           // The .local group exists in every Region where the endpoint runs, so the Region is a wildcard.
-          `arn:${stack.partition}:logs:*:${stack.account}:log-group:/aws/lambda/web/${props.name}.local`,
           `arn:${stack.partition}:logs:*:${stack.account}:log-group:/aws/lambda/web/${props.name}.local:*`,
         ],
       }),

@@ -28,6 +28,7 @@ export interface WebFunctionServiceProps {
  */
 export class WebFunctionService extends Construct {
   public readonly endpointDomainName: string;
+  public readonly role: iam.Role;
 
   constructor(scope: Construct, id: string, props: WebFunctionServiceProps) {
     super(scope, id);
@@ -82,6 +83,7 @@ export class WebFunctionService extends Construct {
     const role = new iam.Role(this, "ExecutionRole", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
     });
+    this.role = role;
     role.addToPolicy(
       new iam.PolicyStatement({
         actions: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],

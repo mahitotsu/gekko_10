@@ -12,8 +12,8 @@ const common = {
   logLevel: "warning",
 };
 
-await build({ ...common, entryPoints: ["src/entry-web.ts"], outfile: "dist/web/index.js" });
-await build({ ...common, entryPoints: ["src/entry-event.ts"], outfile: "dist/event/index.js" });
+await build({ ...common, entryPoints: ["src/entry-web.ts"], external: ["pg-native"], outfile: "dist/web/index.js" });
+await build({ ...common, entryPoints: ["src/entry-event.ts"], external: ["pg-native"], outfile: "dist/event/index.js" });
 
 // The repo root is "type": "module"; mark the bundles as CommonJS so they load the same way locally and on Lambda.
 for (const dir of ["dist/web", "dist/event"]) {

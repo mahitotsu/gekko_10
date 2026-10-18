@@ -40,6 +40,23 @@ const signer = new SignatureV4({
 
 type Result = { status: number; ms: number; body: Record<string, unknown> | null; t: number };
 
+// Failure label: HTTP status plus, where available, the platform error type or the app's DB error class/phase
+// (53400 = DSQL connection rate, 53300 = DSQL connection count). Status 0 is a client-side failure.
+function failureKey(r: Result): string {
+  const b = r.body as { code?: string; phase?: string } | null;
+  return b?.code ? `${r.status} db:${b.code}/${b.phase}` : String(r.status);
+}
+const countBy = (rs: Result[]) => {
+  const m = new Map<string, number>();
+  rs.forEach((r) => m.set(failureKey(r), (m.get(failureKey(r)) ?? 0) + 1));
+  return Object.fromEntries(m);
+};
+const dbOf = (r: Result) => (r.body?.db ?? null) as { newConnection?: boolean; acquireMs?: number } | null;
+const quantile = (xs: number[], p: number) => {
+  const a = [...xs].sort((x, y) => x - y);
+  return a.length ? a[Math.min(a.length - 1, Math.floor((p / 100) * a.length))] : undefined;
+};
+
 const runStart = performance.now();
 const elapsedSec = () => (performance.now() - runStart) / 1000;
 
@@ -98,7 +115,7 @@ if (count === 1) {
   // Timeline per 10-second window: how many environments served requests, and how many requests
   // each environment handled at the same time (inFlight is as of arrival, maxInFlight is the environment's peak).
   const seen = new Set<unknown>();
-  console.log("window  req  err  envs(window) envs(total)  maxInFlight(window)  p50ms  p95ms");
+  console.log("window  req  err  envs(window) envs(total)  maxInFlight(window)  p50ms  p95ms  newConn%  acqP50ms  acqP95ms");
   for (let w = 0; w * 10 < duration + 10; w++) {
     const inWin = results.filter((r) => r.t >= w * 10 && r.t < (w + 1) * 10);
     if (inWin.length === 0) continue;
@@ -108,13 +125,20 @@ if (count === 1) {
     const lat = ok.map((r) => r.ms).sort((a, b) => a - b);
     const q = (p: number) => lat[Math.min(lat.length - 1, Math.floor((p / 100) * lat.length))]?.toFixed(0) ?? "-";
     const peak = Math.max(0, ...ok.map((r) => Number(r.body?.inFlight ?? 0)));
+    // DB columns stay "-" for the noop functions. acquire = time until a connection was ready.
+    const dbs = ok.map(dbOf).filter((d) => d !== null);
+    const newPct = dbs.length ? ((100 * dbs.filter((d) => d!.newConnection).length) / dbs.length).toFixed(0) : "-";
+    const acq = dbs.map((d) => d!.acquireMs).filter((x): x is number => typeof x === "number");
+    const acqQ = (p: number) => quantile(acq, p)?.toFixed(1) ?? "-";
     console.log(
-      `${String(w * 10).padStart(4)}s ${String(inWin.length).padStart(5)} ${String(inWin.length - ok.length).padStart(4)} ${String(winEnvs.size).padStart(12)} ${String(seen.size).padStart(11)} ${String(peak).padStart(19)} ${q(50).padStart(6)} ${q(95).padStart(6)}`,
+      `${String(w * 10).padStart(4)}s ${String(inWin.length).padStart(5)} ${String(inWin.length - ok.length).padStart(4)} ${String(winEnvs.size).padStart(12)} ${String(seen.size).padStart(11)} ${String(peak).padStart(19)} ${q(50).padStart(6)} ${q(95).padStart(6)} ${newPct.padStart(9)} ${acqQ(50).padStart(9)} ${acqQ(95).padStart(9)}`,
     );
   }
   const perEnv = new Map<unknown, number>();
   results.forEach((r) => r.body && perEnv.set(r.body.envId, Math.max(perEnv.get(r.body.envId) ?? 0, Number(r.body.maxInFlight ?? 0))));
   const peaks = [...perEnv.values()].sort((a, b) => a - b);
+  const failed = results.filter((r) => r.status !== 200);
+  if (failed.length) console.log(`failures: ${JSON.stringify(countBy(failed))}`);
   console.log(`environments: ${perEnv.size}, per-environment peak concurrency: min ${peaks[0]}, median ${peaks[Math.floor(peaks.length / 2)]}, max ${peaks[peaks.length - 1]}`);
 } else {
   const ok = results.filter((r) => r.status === 200);
@@ -129,6 +153,7 @@ if (count === 1) {
         requests: count,
         ok: ok.length,
         otherStatus: results.length - ok.length,
+        failures: countBy(results.filter((r) => r.status !== 200)),
         distinctEnvironments: envIds.size,
         maxInFlightObserved: maxInFlight,
         coldStarts: cold,

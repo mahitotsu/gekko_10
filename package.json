@@ -8,11 +8,15 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "synth": "cdk synth",
-    "invoke": "tsx scripts/invoke.ts"
+    "invoke": "tsx scripts/invoke.ts",
+    "db-setup": "tsx scripts/db-setup.ts"
   },
   "dependencies": {
+    "@aws/aurora-dsql-node-postgres-connector": "^0.1.9",
     "@hono/node-server": "^1.13.0",
-    "hono": "^4.6.0"
+    "hono": "^4.6.0",
+    "pg": "^8.23.1",
+    "pg-connection-string": "^2.14.1"
   },
   "devDependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
@@ -20,6 +24,7 @@
     "@smithy/signature-v4": "^5.0.0",
     "@types/aws-lambda": "^8.10.145",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "aws-cdk": "^2.1100.0",
     "aws-cdk-lib": "2.273.0",
     "constructs": "^10.4.0",

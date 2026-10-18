@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
+import { DB_ROWS, DbError, createDbFromEnv, type Db } from "./db.js";
 
 const MAX_WAIT_MS = 25_000;
 
@@ -15,8 +16,14 @@ let maxInFlight = 0;
 type Snapshot = { coldStart: boolean; requestCount: number; inFlight: number };
 type Env = { Variables: { snapshot: Snapshot } };
 
-export function createApp(): Hono<Env> {
+export interface AppDeps {
+  /** DB access; null means this function has no database (the /db/* routes return 501). Defaults to DB_MODE & co. */
+  db?: Db | null;
+}
+
+export function createApp(deps: AppDeps = {}): Hono<Env> {
   const app = new Hono<Env>();
+  const db = deps.db === undefined ? createDbFromEnv() : deps.db;
 
   // Counters are updated before the handler runs and released in finally,
   // so inFlight and requestCount include the current request.
@@ -59,6 +66,34 @@ export function createApp(): Hono<Env> {
     await new Promise<void>((resolve) => setTimeout(resolve, ms));
     // inFlight/requestCount are as of arrival; maxInFlight and uptimeMs are as of completion.
     return c.json({ ok: true, ...info(snapshot, requestId), waitedMs: ms });
+  });
+
+  // Runs one statement through the configured connection mode and reports how the connection was obtained.
+  const dbRoute = async (c: Context<Env>, text: string, values: unknown[] = []) => {
+    if (!db) return c.json({ error: "no database configured (DB_MODE is unset)" }, 501);
+    const base = info(c.get("snapshot"), c.req.header("lambda-web-request-id"));
+    try {
+      const { rows, trace } = await db.run(text, values);
+      return c.json({ ok: true, ...base, rows: rows.length, db: trace });
+    } catch (e) {
+      if (!(e instanceof DbError)) throw e;
+      return c.json(
+        { ok: false, ...base, error: e.message, code: e.errorClass, sqlstate: e.sqlstate ?? null, phase: e.phase, db: e.trace },
+        503,
+      );
+    }
+  };
+
+  app.get("/db/ping", (c) => dbRoute(c, "SELECT 1 AS ok"));
+
+  // One primary-key lookup. id is 1..DB_ROWS; random when omitted.
+  app.get("/db/read", (c) => {
+    const raw = c.req.query("id");
+    if (raw !== undefined && (!/^\d+$/.test(raw) || Number(raw) < 1 || Number(raw) > DB_ROWS)) {
+      return c.json({ error: `id must be an integer in 1..${DB_ROWS}` }, 400);
+    }
+    const id = raw === undefined ? 1 + Math.floor(Math.random() * DB_ROWS) : Number(raw);
+    return dbRoute(c, "SELECT id, payload FROM items WHERE id = $1", [id]);
   });
 
   return app;

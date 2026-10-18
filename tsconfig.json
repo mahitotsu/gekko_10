@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "scripts/invoke.ts", "bin", "lib", "test"]
+  "include": ["src", "scripts/invoke.ts", "scripts/db-setup.ts", "bin", "lib", "test"]
 }

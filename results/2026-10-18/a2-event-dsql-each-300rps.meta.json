@@ -1,0 +1,19 @@
+{
+ "taskId": "122df3234715430d98ccb7d9d5d2f32f",
+ "args": [
+  "https://2yf2ktd5tmxrxddirq4cfpp3yq0zvrex.lambda-url.ap-northeast-1.on.aws",
+  "--path",
+  "/db/read",
+  "--rate",
+  "300",
+  "--duration",
+  "20",
+  "--max-inflight",
+  "500"
+ ],
+ "exitCode": "0",
+ "stoppedReason": "Essential container in task exited",
+ "createdAt": "2026-10-18T22:32:03.246000+09:00",
+ "startedAt": "2026-10-18T22:32:19.977000+09:00",
+ "stoppedAt": "2026-10-18T22:33:05.843000+09:00"
+}

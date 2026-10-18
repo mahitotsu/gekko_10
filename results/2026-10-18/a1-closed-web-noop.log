@@ -1,0 +1,10 @@
+2026-10-18T13:29:24 window  req  err  envs(window) envs(total)  maxInFlight(window)  p50ms  p95ms  newConn%  acqP50ms  acqP95ms
+2026-10-18T13:29:24    0s 43457    0           15          15                   1      9     20         -         -         -
+2026-10-18T13:29:24   10s 50854    0           15          15                   1      9     18         -         -         -
+2026-10-18T13:29:24   20s 49952    0           18          18                   1      9     18         -         -         -
+2026-10-18T13:29:24   30s 50300    0           19          19                   1      9     19         -         -         -
+2026-10-18T13:29:25   40s 50408    0           19          19                   1      9     19         -         -         -
+2026-10-18T13:29:25   50s 49382    0           19          19                   1      9     19         -         -         -
+2026-10-18T13:29:25   60s    50    0           19          19                   1      7     10         -         -         -
+2026-10-18T13:29:25 load generator: 1.08 cores used on average (2 available)
+2026-10-18T13:29:25 environments: 19, per-environment peak concurrency: min 1, median 1, max 1

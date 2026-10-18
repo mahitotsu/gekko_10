@@ -3,18 +3,31 @@
 Lambda Web Functions と Event Functions（関数URL）を、Aurora DSQL をバックエンドにして比較する検証リポジトリ。
 目的・仮説・計測項目は [docs/plan.md](docs/plan.md)、Web Functions の仕様は [docs/web-functions-notes.md](docs/web-functions-notes.md)。
 
-現在の範囲: DB なしのエンドポイント（`/noop`, `/wait`）を、両方の形態で動かす。リージョンは ap-northeast-1。
+現在の範囲: DB なしのエンドポイント（`/noop`, `/wait`）と、Aurora DSQL につなぐエンドポイント（`/db/ping`, `/db/read`）を、両方の形態で動かす。リージョンは ap-northeast-1。
 
 ## 構成
 | パス | 役割 |
 |---|---|
-| `src/app.ts` | 共通の Hono アプリ。`/noop`, `/wait?ms=N`。環境の識別情報を返す |
+| `src/app.ts` | 共通の Hono アプリ。`/noop`, `/wait?ms=N`, `/db/ping`, `/db/read`。環境の識別情報を返す |
+| `src/db.ts` | DSQL への接続層。`each` / `reuse` / `pool` の 3 モード（公式コネクタを使う） |
 | `src/entry-web.ts` | Web Functions 用。`AWS_LAMBDA_HTTP_ENDPOINT` で listen |
 | `src/entry-event.ts` | Event Functions 用。`hono/aws-lambda` の `handle()` |
 | `scripts/bundle.mjs` | 両方を同じ設定でバンドル（`dist/web`, `dist/event`） |
-| `scripts/invoke.ts` | SigV4 署名付きリクエストを送る。並行実行と集計に対応 |
+| `scripts/invoke.ts` | SigV4 署名付きリクエストを送る。並行実行と集計に対応（失敗の内訳、新規接続の割合、接続取得時間） |
+| `scripts/db-setup.ts` | `items` テーブルの作成と 1,000 行の投入（冪等） |
 | `lib/constructs/*` | Event / Web それぞれの Construct。Web は L1 |
-| `lib/event-stack.ts`, `lib/web-stack.ts` | `Gekko10EventStack`, `Gekko10WebStack` |
+| `lib/db-stack.ts` | `Gekko10DbStack`: DSQL クラスタ（`CfnCluster`、パブリックエンドポイント、削除保護なし） |
+| `lib/event-stack.ts`, `lib/web-stack.ts` | `Gekko10EventStack`, `Gekko10WebStack`: 構成のリストから関数を作る。構成を足すときはリストに 1 行足す |
+
+### 関数の一覧
+| 関数 | `DB_MODE` | 接続の持ち方 |
+|---|---|---|
+| `gekko10-event-noop`, `gekko10-web-noop` | なし | DB なし |
+| `gekko10-event-dsql-each`, `gekko10-web-dsql-each` | `each` | リクエストごとに接続して閉じる |
+| `gekko10-event-dsql-reuse` | `reuse` | 環境内で 1 接続を保持して再利用（60 分の上限の前に張り直す。切れていたら 1 回だけ再接続して再試行） |
+| `gekko10-web-dsql-pool` | `pool` | 環境内で `AuroraDSQLPool` を共有（`DB_POOL_MAX` = 64 = maxConcurrencyPerEnvironment） |
+
+Web の関数を構成ごとに分けているのは、メトリクスにリビジョンの次元がなく、動的な同時実行数の学習が関数単位だから。
 
 ### レスポンス
 `/noop` と `/wait` は次の JSON を返す。
@@ -31,6 +44,27 @@ Lambda Web Functions と Event Functions（関数URL）を、Aurora DSQL をバ�
 | `waitedMs` | `/wait` のみ |
 
 `/wait?ms=N` の N は 0〜25000 の整数。範囲外・不正は 400。
+
+### `/db/*`
+- `/db/ping`: `SELECT 1`。接続のコストだけを見る基準。
+- `/db/read?id=N`: `SELECT id, payload FROM items WHERE id = $1`（N は 1〜1000、省略するとランダム）。
+- `DB_MODE` が未設定の関数（noop）では 501。
+
+上のフィールドに加えて、`rows` と `db` を返す。
+
+| `db` のフィールド | 意味 |
+|---|---|
+| `mode` | `each` / `reuse` / `pool` |
+| `newConnection` | このリクエストで接続を新しく作ったか。pool では「プールの接続の初回の使用」 |
+| `reconnected` | reuse のみ。共有していた接続が切れていて、再接続して再試行した |
+| `acquireMs` | 接続が使えるようになるまで。each は接続の確立、reuse は 0（再接続時のみ確立）、pool は `pool.connect()`（トークンの署名を含む） |
+| `queryMs`, `releaseMs` | 問い合わせ、解放（each は `end()`、pool は `release()`） |
+| `connectionAgeMs` | 使った接続の経過時間（reuse, pool） |
+| `pool` | `{ total, idle, waiting }`（pool のみ） |
+| `envConnectionsCreated` | この環境が作った接続の通算数 |
+| `envConnectErrors` | この環境での接続エラーの通算数。`53400`（接続レート）/ `53300`（接続の総数）/ `other` |
+
+失敗したときは 503 で、`ok:false`、`error`、`code`（上の 3 分類）、`sqlstate`、`phase`（`connect` / `query`）を返し、同じ内容を 1 行の JSON ログ（`"event":"db_error"`）にも出す。成功したリクエストはログに出さない。DSQL が接続の拒否を SQLSTATE `53400` / `53300` で返すかは未確認なので、メッセージ（`rate exceeded` / `too many open connections`）でも判定している。
 
 ## 前提
 - Node.js 24、npm
@@ -52,10 +86,14 @@ curl "localhost:3000/wait?ms=500"
 
 ## synth とデプロイ
 ```sh
-npx cdk synth          # 両スタックを合成（bundle も自動で走る）
-npx cdk deploy Gekko10EventStack
-npx cdk deploy Gekko10WebStack
+npx cdk synth          # 3 スタックを合成（bundle も自動で走る）
+npx cdk deploy Gekko10DbStack     # 先に DSQL クラスタだけを作る
+npm run db-setup -- <Gekko10DbStack の Endpoint>   # テーブルと 1,000 行
+npx cdk deploy Gekko10EventStack Gekko10WebStack
 ```
+- Event と Web は Db スタックの出力を参照する（CDK が依存を付ける）。Event と Web の間に依存はない。
+- 他の `cdk` コマンドが動いている間は、`cdk.out` が競合して `Other CLIs ... are currently reading from cdk.out` で失敗する。並行して `synth` / `diff` したいときは `--output <別ディレクトリ>` を付ける。
+- デプロイの前に、バンドルを実クラスタにつないで確かめられる: `DB_MODE=each|pool DSQL_ENDPOINT=<Endpoint> AWS_LAMBDA_HTTP_ENDPOINT=127.0.0.1:3000 node dist/web/index.js`（`eval "$(aws configure export-credentials --format env)"` で認証情報を出しておく）。
 - `cdk synth` で `Unknown resource type 'AWS::Lambda::WebFunction'`（F3006）の警告が出るが、CDK 側の検証スキーマが新しいリソースタイプを知らないだけで、合成は成功する。
 - Web スタックは専用の S3 バケット（バージョニング有効）にコードを置く。Web Functions は S3 のコードしか受け付けず、バケットポリシーで Lambda サービスに読み取りを許可する必要があるため。コードを変えると新しいリビジョンが作られ、古いリビジョンは削除される。
 - デプロイ後の出力: Event は `Url`（関数URL）、Web は `EndpointUrl`・`EndpointArn`。
@@ -80,6 +118,8 @@ aws lambda-web get-web-account-settings --region ap-northeast-1
   ]
 }
 ```
+
+DSQL 用の関数が増えたので、上の例の Resource は関数ごとに足す（Web は `web-function/gekko10-web-dsql-each/endpoint/main` など）。
 
 ### 1. 署名なしは拒否される
 ```sh
@@ -126,6 +166,8 @@ npm run invoke -- <url> --path "/wait?ms=1000" --count 50 --concurrency 50
 
 ## 後片付け
 ```sh
-npx cdk destroy Gekko10WebStack Gekko10EventStack
+npx cdk destroy Gekko10WebStack Gekko10EventStack   # 先に関数
+npx cdk destroy Gekko10DbStack                      # 最後にクラスタ（テーブルごと消える）
 ```
-Web のコード用バケットは `autoDeleteObjects` で中身ごと削除される。
+Db スタックは Event / Web から参照されているので、先には消せない。Web のコード用バケットは `autoDeleteObjects` で中身ごと削除される。
+Web の動的な同時実行数の学習は関数に保持される。測定の期間中は Web スタックを destroy しない。

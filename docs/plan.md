@@ -29,7 +29,7 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 - **構成ごとに別の Web Function を作る**（例 `gekko10-web-noop`, `gekko10-web-dsql-each`, `gekko10-web-dsql-pool`）。理由:
   - メトリクスにリビジョンの次元がなく、環境系のメトリクス（CPU・メモリ・同時実行）にはエンドポイントの次元もない。同じ関数に複数の構成を載せると分けて測れない。
   - 動的な同時実行数の上限は関数ごとに学習・保持される。構成を混ぜると互いに影響する。
-- 今回は `gekko10-web-noop` と `gekko10-event-noop`（1 GB）だけを作る。
+- 作成済み（2026-10-18）: Event は `gekko10-event-noop`, `gekko10-event-dsql-each`, `gekko10-event-dsql-reuse`（いずれも 1 GB）。Web は `gekko10-web-noop`, `gekko10-web-dsql-each`, `gekko10-web-dsql-pool`（maxConcurrency 64）。スタックは `Gekko10DbStack`（クラスタ）、`Gekko10EventStack`、`Gekko10WebStack` の 3 つ。
 - Event の「DSQL・プール共有」（決定済み）: 環境内で 1 接続を再利用する。Event は 1 環境が同時に 1 リクエストしか処理しないので、プールは実質 1 接続になる。これが「Web で共有する効果」と「接続を使い回す効果」を切り分ける対照になる。接続は最長 60 分で切れるので、再接続と、IAM 認証トークンの期限切れを処理する。
 
 ## 4. 負荷パターン
@@ -87,8 +87,8 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 - 手元の WSL から東京への接続は、IPv6 の到達不能と TCP 接続のタイムアウトが散発する。測定は EC2 から行う。
 
 ## 8. 段階
-1. **(今回)** 調査メモ、この計画、DB なしの `/noop` `/wait`、CDK（Event 1 GB と Web 1 つ、IAM 認証）、動作確認手順
-2. DSQL クラスタの作成と接続処理（毎回接続、プール共有）
+1. **(完了)** 調査メモ、この計画、DB なしの `/noop` `/wait`、CDK（Event 1 GB と Web 1 つ、IAM 認証）、動作確認手順
+2. **(完了、2026-10-18)** DSQL クラスタの作成と接続処理（毎回接続、再利用、プール共有）。結果は「段階 2 の決定と実機確認」を参照
 3. Event のメモリ違い（512 MB / 3.5 GB）、Web の maxConcurrency 違い（16 / 128）
 4. 負荷試験（k6、EC2）、集計、コスト計算
 
@@ -110,7 +110,7 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 **接続とトークン**
 - 認証トークンの生成は**ローカルの署名処理**で、AWS への呼び出しは発生しない。つまり「毎回接続」で増えるコストは、TCP/TLS のハンドシェイクと PostgreSQL の認証往復、トークンの署名計算である。計画の「接続確立コスト（TLS + IAM 認証トークン生成）」という表現はこの意味で正しい。
 - トークンの既定の有効期限は 15 分、最長 1 週間。接続が確立した後は、トークンが失効しても接続は有効なまま。→ プールではトークンの期限切れは問題にならず、問題になるのは接続の最長 60 分の方。
-- Node.js 向けに公式のコネクタ `@aws/aurora-dsql-node-postgres-connector`（npm の最新 0.1.9。`pg` のラッパー）がある。ピア依存は `@aws-sdk/credential-providers`, `@aws-sdk/dsql-signer`, `pg`。`AuroraDSQLClient`（1 接続）と `AuroraDSQLPool`（`max`, `idleTimeoutMillis` など `pg` のオプションが使える）。ユーザー名が `admin` なら admin 用トークンを自動で選ぶ。リージョンはホスト名から取れる。**接続ごとにトークンを生成する**。
+- Node.js 向けに公式のコネクタ `@aws/aurora-dsql-node-postgres-connector`（npm の最新 0.1.9。`pg` のラッパー）がある。依存は `@aws-sdk/credential-providers`, `@aws-sdk/dsql-signer`, `@smithy/types`（通常の依存）で、ピア依存は `pg ^8.16.3` と `pg-connection-string ^2.7.0`（npm のメタデータによる。公式ドキュメントのページはこの 3 つをピア依存として書いているが、実際と異なる）。`AuroraDSQLClient`（1 接続）と `AuroraDSQLPool`（`max`, `idleTimeoutMillis` など `pg` のオプションが使える）。ユーザー名が `admin` なら admin 用トークンを自動で選ぶ。リージョンはホスト名から取れる。**接続ごとにトークンを生成する**。
   - 出典: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/SECTION_program-with-dsql-connector-for-node-postgres.html
 - 方針案（次の段階で確定）: 3 つの構成すべてでこのコネクタを使う（実装の差を作らない）。「毎回接続」は `AuroraDSQLClient` をリクエストごとに作って `end()` する。「プール共有」は Web では `AuroraDSQLPool`（`max` は検証パラメータ）、Event では環境内で `AuroraDSQLClient` を 1 つ保持して再利用（切断時に再接続）。
 
@@ -119,10 +119,33 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 - **接続の試行回数**: 同じ名前空間の `CallCount`、Resource=`DbConnectAdmin` または `DbConnect`。新規接続の回数（= 接続レート 100/秒の消費量）の近似として使える。
 - DPU: `WriteDPU`, `ReadDPU`, `ComputeDPU`, `MultiRegionWriteDPU`, `TotalDPU`（ResourceId=`<cluster-id>`）。コスト集計に使う。
 - その他: `TotalTransactions`, `OccConflicts`, `QueryTimeouts`, `CommitLatency`(P50), `ComputeTime`。
-- 名前空間 `AWS/Usage` のメトリクスの粒度（1 分か）と、接続数が瞬間値か最大値かは**未確認**。次の段階で `aws cloudwatch list-metrics` と実測で確認する。アクティブ接続数は 1 分間隔だと短いピークを見逃す可能性があるので、アプリ側（プールの接続数）でも記録する。
+- 名前空間 `AWS/Usage` のメトリクスの粒度は、実測で確認済み（下の「段階 2 の決定と実機確認」）。アクティブ接続数は 1 分間隔で短いピークを見逃すので、アプリ側（`db.pool`、`envConnectionsCreated`）でも記録する。
 - 接続レートの上限（100/秒）に達したときは、DSQL のエラーコード `CONFIGURED_LIMIT_EXCEEDED(53400)`（接続レート）と `TOO_MANY_CONNECTIONS(53300)`（総数）で区別できる。アプリのログに残す。
 
-### まだ決まっていないこと
-- 「プール共有」の `max`（Web の環境あたりのプールサイズ）をいくつにするか。maxConcurrencyPerEnvironment（16/64/128）との関係で決める
-- `AWS/Usage` の接続数メトリクスの粒度（実測で確認）
-- 検証用の DB のテーブル設計とクエリ（`SELECT 1` 相当か、読み書きを含めるか）。次の段階の最初に決める
+### 段階 2 の決定と実機確認（2026-10-18）
+#### 決定
+- **スタックは 3 つ**: `Gekko10DbStack`（クラスタ。状態を持つので分ける）、`Gekko10EventStack`、`Gekko10WebStack`（ランタイムごとに全関数）。理由は、更新の失敗のロールバックを Event と Web で分け、クラスタを関数の作り直しから切り離すため。関数は構成のリスト（`lib/event-stack.ts`, `lib/web-stack.ts`）から作るので、段階 3 の変種は 1 行の追加で済む。削除は関数のスタックが先、Db が最後。Web の動的な同時実行数の学習は関数に保持されるため、測定の期間中は Web スタックを destroy しない。
+- **Web の「プール共有」の max は 64**（= maxConcurrencyPerEnvironment）。`max` が同時処理数より小さいと、プールの待ちが接続共有の効果に混ざるため。持続負荷の観測では環境あたりの同時処理が約 25 だったので、実際の接続数は 64 までは増えない見込み。maxConcurrency を 16/128 に変えるときは `DB_POOL_MAX` も揃える。アイドルは 60 秒で閉じ、接続の最長は 3,300 秒（55 分。コネクタの既定値と同じ）。
+- **検証用のテーブルとクエリ**: `items (id integer PRIMARY KEY, payload text)` に 1,000 行（payload 100 バイト）。`/db/read` は主キーで 1 行、`/db/ping` は `SELECT 1`。書き込みは入れない（commit のレイテンシと OCC の競合が支配的になり、接続のコストが見えにくくなるため）。必要なら段階 3 以降で足す。
+- **DSQL には admin ロールで接続**（`dsql:DbConnectAdmin`、リソースはクラスタの ARN のみ）。検証用で、独自ロールの作成手順を増やさないため。
+- **コネクタの認証情報**: `customCredentialsProvider` は渡さない。渡さない場合、コネクタは `fromNodeProviderChain({profile})` を使い（ソース `dist/index.mjs`）、Lambda では環境変数の認証情報が使われる。
+- **エラーの分類**: `53400`（接続レート）/ `53300`（総数）/ other。SQLSTATE とメッセージの両方で判定する（DSQL が SQLSTATE を返すかは未確認、まだ両方とも発生させていない）。
+
+#### 実機で確認したこと（結論）
+- 3 モードとも実クラスタで動いた。`each` は毎回新しい接続、`reuse` は 2 回目以降の接続取得が約 0.02 ms、`pool` は空き接続の取得が約 1 ms 以下（20 並行で接続 19 本、待ち 0）。
+- **`AuroraDSQLPool.connect()` は、空き接続を再利用するときも毎回トークンを署名する**（コネクタ 0.1.9 のソース）。つまり pool には、接続の確立は省けても、取得ごとのローカル署名が残る。実測ではこのコストは約 1 ms 以下。`reuse` は接続時の 1 回だけ。比較の注記に入れる。
+- **`AWS/Usage` の `CallCount`（Resource=`DbConnectAdmin`）は接続の試行回数と一致した**。ローカルでの確認の合計 25（each 4 + pool 19 + reuse 1 + db-setup 1）が 25、Lambda への 8 回の接続が 6 + 2（2 つの分に分かれて）で 8。→ 接続レートの消費量として使える。時間粒度は 1 分で、`Period=1` を指定しても 1 分境界の点しか返らない。
+- **`ClusterConnectionCount` は、接続が開いている間だけ現れ、1 分に 1 サンプルの瞬間値**だった（開いていた接続は reuse と pool の 2 本で、`Maximum` = 2、`SampleCount` = 1）。接続が閉じた分には点が出ない。→ 短命の接続（each）は、このメトリクスにほとんど出ない。each の接続数は `CallCount` で見る。
+- 次元（`CallCount`）: `Type=API`, `ResourceId=cluster/<id>`, `Resource=DbConnectAdmin`, `Service=AuroraDSQL`, `Class=None`。`ClusterConnectionCount`: 名前空間 `AWS/Usage`、メトリクス名 `ResourceCount`、`Type=Resource`、`Resource=ClusterConnectionCount` ほか同じ。DPU 系は名前空間 `AWS/AuroraDSQL`、次元 `ClusterId`（`TotalDPU`, `ComputeDPU`, `ReadDPU`, `WriteDPU`, `CommitLatency` など）。
+- 手元の WSL からの接続確立は約 120〜300 ms、Lambda からは約 130〜270 ms（コールドスタート）、2 回目以降の each で 17〜116 ms。性能の比較には使えない（EC2 から測る）。
+
+#### 出典
+- コネクタの型とソース: `@aws/aurora-dsql-node-postgres-connector@0.1.9` の `dist/index.d.cts`, `dist/index.mjs`（https://unpkg.com/@aws/aurora-dsql-node-postgres-connector@0.1.9/）
+- コネクタの使い方: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/SECTION_program-with-dsql-connector-for-node-postgres.html（オプション名は表が `username`、型とサンプルは `user`。型を採った）
+- クォータとエラーコード: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/CHAP_quotas.html（接続レート 100/秒・引き上げ不可・`53400`、総数 10,000・`53300`、接続の最長 60 分、1 トランザクションで変更できる行は 3,000）
+- メトリクス: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/cloudwatch-monitoring.html。粒度と挙動は上の実測（`aws cloudwatch get-metric-statistics`、2026-10-18）
+
+### まだ決まっていないこと / 未確認
+- `53400` / `53300` が実際にどの SQLSTATE とメッセージで返るか（負荷試験で接続レートに達したときに確認する）
+- `reuse` の再接続（凍結から復帰した後に接続が切れていた場合）の実機での挙動。単体テストでは確認済み
+- DSQL の DPU 単価（Price List API で取得する）と、東京の Lambda の単価（段階 4）

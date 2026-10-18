@@ -43,14 +43,14 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 - 構成の測定順序を固定せず、ランダム化するか、交互に実行する（時間帯・アカウントの枠の変化の影響を避ける）。
 - アイドル後の単発は、環境が回収されるまでの時間より長く空ける。(第三者) 4.5〜10.5 分、未使用のものは約 5 分。余裕を見て 15 分以上空ける。
 - 429 は `lambda-web-error-type` ヘッダで分類する（レート上限・環境数上限・アカウントの vCPU・同時初期化）。同時初期化の 429 はスロットルのメトリクスに出ない。ヘッダの無い 503 は別に数える。
-- k6 は EC2（ap-northeast-1）から実行。負荷のレートが 1 エンドポイント 10,000 RPS、アカウント全体 100,000 RPS 以下になることを確認する。
+- 負荷は東京の Fargate タスク（`scripts/load-run.sh`、中身は `scripts/invoke.ts`）から実行する。EC2 と k6 は使わない（理由は「負荷生成の方法」）。負荷のレートが 1 エンドポイント 10,000 RPS、アカウント全体 100,000 RPS 以下になることを確認する。
 
 ## 5. 計測項目と取得元
 
 | 項目 | Event + 関数URL | Web Functions |
 |---|---|---|
-| p50/p95/p99 | k6（クライアント側） | k6 |
-| スループットの上限 | k6 の到達 RPS、429/5xx の発生点 | 同左 + `EndpointRequestThrottles` など |
+| p50/p95/p99 | `invoke.ts`（クライアント側。Fargate から） | 同左 |
+| スループットの上限 | `invoke.ts` の到達 RPS、429/5xx の発生点 | 同左 + `EndpointRequestThrottles` など |
 | コールドスタートの数 | `REPORT` ログの `Init Duration`、レスポンスの `coldStart` | ログの `platform.initStart`、レスポンスの `coldStart` |
 | 環境数 | 同時実行数（`ConcurrentExecutions`）、レスポンスの `envId` の種類 | `EndpointActiveEnvironments`、`envId` の種類 |
 | 環境あたりの同時処理 | 常に 1 | `EnvironmentConcurrentRequests`、レスポンスの `maxInFlight` |
@@ -83,7 +83,7 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 - 1,000 件・50 並行の `/wait?ms=500`（Web）: 環境 26、最大同時処理 3、コールドスタート 0。`EndpointActiveEnvironments` = 26、`EnvironmentConcurrentRequests` の最大 = 3 で、アプリ側の観測と一致した。
 - 解釈: **Web の環境あたりの同時処理数は、最初はほとんど 1〜3 にしかならない**（`maxConcurrencyPerEnvironment` の 64 は上限にすぎず、動的な上限が保守的に始まる、というドキュメントの記述どおり）。仮説の「接続プールを共有できる」効果は、動的な上限が上がってから出る。DSQL の測定では、**上限がどこまで上がるかを先に調べる必要がある**（CPU をほとんど使わない I/O 待ちの負荷を長く流して、`EnvironmentConcurrentRequests` が増えるか）。増えなければ、`maxConcurrencyPerEnvironment` を変えても結果が変わらない可能性がある。
 - **持続負荷で上限は上がった**（`/wait?ms=1000`、並行 100、180 秒、約 1.7 万リクエスト、Web）: 最初の 10 秒は環境 13・環境あたりの最大同時処理 約 10。その後は同時処理が 25 前後まで増え、80 秒以降は**わずか 4 環境で 100 並行を処理**した（環境あたり約 25）。レイテンシは 1,017 ms（待機 1,000 ms）で安定。エラーはクライアント側の接続タイムアウト 1 件のみ。→ 仮説の前提（1 環境が複数リクエストを同時処理する）は成り立つが、**上がるまでに 1〜2 分かかる**。測定では、このウォームアップを捨てる必要がある。
-- クライアントのレイテンシ（p50 が 2 秒前後）は、新規 TLS 接続の確立を含むため、手元からの値は使えない。持続負荷では p50 が約 516 ms（待機 500 ms）だった。比較は EC2 の k6 で行う。
+- クライアントのレイテンシ（p50 が 2 秒前後）は、新規 TLS 接続の確立を含むため、手元からの値は使えない。持続負荷では p50 が約 516 ms（待機 500 ms）だった。比較は東京の Fargate タスクから行う。
 - 手元の WSL から東京への接続は、IPv6 の到達不能と TCP 接続のタイムアウトが散発する。測定は EC2 から行う。
 
 ## 8. 段階
@@ -94,7 +94,7 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 | 1 **(完了)** | 調査メモ、この計画、DB なしの `/noop` `/wait`、CDK（Event 1 GB と Web 1 つ、IAM 認証）、動作確認手順 | 比べる土台を作る。DB なしの値は、DSQL を足したときの差を見る基準になる。デプロイ方法・認証・メトリクスの取り方もここで確かめた |
 | 2 **(完了、2026-10-18)** | DSQL クラスタと、4 つの構成の関数（Event の毎回接続・再利用、Web の毎回接続・プール共有） | 仮説を直接比べる構成を用意する。「Web で接続を共有する効果」と「単に接続を使い回す効果」を切り分けるため、Event にも再利用の構成を入れる。DSQL 側の接続数を測る方法も実機で確かめる。結果は「段階 2 の決定と実機確認」を参照 |
 | 3 | Event のメモリ違い（512 MB / 3.5 GB）、Web の maxConcurrency 違い（16 / 128） | 差が設定の違いによるものではないかを確かめる。Event はメモリで CPU の割当も変わり、Web は 1 環境で同時に処理する数の上限を変えられる。1 つの設定だけで比べると、その設定が有利不利を決めた可能性が残る |
-| 4 | 負荷試験（k6、EC2）、集計、コスト計算 | 仮説に数字で答える。§4 の 4 パターンの負荷を流す。手元の WSL からでは通信の遅延が混ざるので、東京の EC2 から測る。AWS の費用とクォータに影響するため、実行前に費用の見積もり（リクエスト数・並行数・時間、単価と出典、クォータへの影響）を出して承認を得る |
+| 4 | 負荷試験（Fargate タスクから `invoke.ts`）、集計、コスト計算 | 仮説に数字で答える。§4 の 4 パターンの負荷を流す。手元の WSL からでは通信の遅延が混ざるので、東京の Fargate タスクから測る。AWS の費用とクォータに影響するため、実行前に費用の見積もり（リクエスト数・並行数・時間、単価と出典、クォータへの影響）を出して承認を得る |
 
 段階 3 は、段階 4 の最初の測定結果を見てから、必要な変種だけを足してもよい。現在の 4 構成だけでも、中心の問い（Web の共有効果があるか）には答えられる。
 
@@ -155,3 +155,40 @@ Aurora DSQL をバックエンドにしたときの、レイテンシ・スル�
 - `53400` / `53300` が実際にどの SQLSTATE とメッセージで返るか（負荷試験で接続レートに達したときに確認する）
 - `reuse` の再接続（凍結から復帰した後に接続が切れていた場合）の実機での挙動。単体テストでは確認済み
 - DSQL の DPU 単価（Price List API で取得する）と、東京の Lambda の単価（段階 4）
+
+## 9. 負荷生成の方法（2026-10-18）
+### 結論
+- **東京の Fargate タスクから `scripts/invoke.ts` を実行する**（`Gekko10LoadStack`、`scripts/load-run.sh`）。EC2 と k6 は使わない。
+- 常設のリソースを持たない。タスクは `run-task` で 1 回起動し、終われば public IP と課金が止まる。`load-run.sh` は、最大実行時間を超えたとき、Ctrl-C のとき、エラーのときに `stop-task` で止める。
+- 動作確認済み（少数）: Web の noop に 20 件、Event の DSQL（reuse）の `/db/read` に 30 件。いずれも全件 200、タスクの終了後に `list-tasks` は空だった。同じ noop への p50 は、手元の WSL で 28 ms、Fargate で 13 ms。
+
+### 根拠
+- **EC2 を使わない理由**: 常設のリソースを避ける方針（起動して使い終わったら消せば足りるが、タスクのほうが仕組みが小さい）。CloudShell は、私（Claude Code）が操作できないので採らなかった。
+- **k6 を使わない理由**: `invoke.ts` に SigV4 署名の実装（`x-amz-content-sha256` の扱いを含む）がすでにある。k6 の利点は到着レート固定（open model）だが、`invoke.ts` は並行数固定（closed model）。open model が必要になったら、`invoke.ts` に `--rate` を足すか、k6 を検討する。
+- **サイズ**: 2 vCPU / 4 GB、x86_64。生成側が飽和していないかは、`invoke.ts` の最後の出力（`loadgenCoresUsed` / `loadgenCoresAvailable`、または `--duration` の `load generator:` 行）で確認する。使用が利用可能なコア数に近い場合、その結果は採用しない。
+- **ネットワーク**: デフォルト VPC の public サブネット、`assignPublicIp=ENABLED`。ECR からのイメージの取得と CloudWatch Logs への出力に、インターネットへの経路が要る。NAT Gateway と VPC エンドポイントは作らない。VPC・サブネット・NAT・ロードバランサ・サービスは作っていない（`cdk synth` のテンプレートで確認）。
+- **IAM**: タスクロールは、6 つの関数に絞った `lambda:InvokeFunctionUrl`（Event）と `lambda:InvokeWebFunctionEndpoint`（Web）のみ。
+
+### 使い方
+```sh
+scripts/load-run.sh [--max-seconds N] -- <invoke.ts の引数>
+scripts/load-run.sh -- https://<endpoint> --path /db/read --duration 300 --concurrency 100
+```
+- 最大実行時間の既定は `--duration` + 180 秒（`--duration` がなければ 600 秒）。
+- 出力は CloudWatch Logs（`Gekko10LoadStack` の LogGroup、保持 1 週間）から取って表示される。
+- 負荷の本番実行の前には、リクエスト数・並行数・時間、単価と出典、クォータへの影響を含む見積もりを出して、承認を得る。
+
+### 費用（東京、AWS Price List API、2026-10-18 取得、価格表の公開日 2026-09-11）
+| 項目 | 単価 | 出典 |
+|---|---|---|
+| Fargate x86_64 vCPU | $0.05056 / 時間 | `APN1-Fargate-vCPU-Hours:perCPU`（`aws pricing get-products --service-code AmazonECS`） |
+| Fargate x86_64 メモリ | $0.00553 / GB・時間 | `APN1-Fargate-GB-Hours` |
+| public IPv4（使用中） | $0.005 / 時間 | `APN1-PublicIPv4:InUseAddress`（`--service-code AmazonVPC`） |
+| ECR の保管 | $0.10 / GB・月 | `APN1-TimedStorage-ByteHrs`（`--service-code AmazonECR`） |
+
+- 2 vCPU / 4 GB のタスク 1 つは、1 時間あたり約 $0.128（2 × 0.05056 + 4 × 0.00553 + 0.005）。
+- 常設の課金は、CDK のブートストラップ用 ECR リポジトリに残る 81 MB のイメージのみ（月に約 $0.008）。
+- クォータ: Fargate On-Demand vCPU は 140（`aws service-quotas get-service-quota --service-code fargate --quota-code L-3032A538`）。2 vCPU のタスクは最大 70 並列。
+
+### 後片付け
+`npx cdk destroy Gekko10LoadStack`。ECR のイメージは残る（`cdk gc --unstable=gc --type ecr` で、使われていないものを整理できる）。

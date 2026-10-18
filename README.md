@@ -16,6 +16,9 @@ Lambda Web Functions と Event Functions（関数URL）を、Aurora DSQL をバ�
 | `scripts/invoke.ts` | SigV4 署名付きリクエストを送る。並行実行と集計に対応（失敗の内訳、新規接続の割合、接続取得時間） |
 | `scripts/db-setup.ts` | `items` テーブルの作成と 1,000 行の投入（冪等） |
 | `lib/constructs/*` | Event / Web それぞれの Construct。Web は L1 |
+| `lib/load-stack.ts` | `Gekko10LoadStack`: 負荷生成用の Fargate タスク定義（常設のリソースなし） |
+| `load/Dockerfile`, `scripts/bundle-load.mjs` | 負荷生成イメージ（`invoke.ts` を 1 ファイルにバンドル） |
+| `scripts/load-run.sh` | 東京の Fargate タスクとして `invoke.ts` を実行し、結果を表示する |
 | `lib/db-stack.ts` | `Gekko10DbStack`: DSQL クラスタ（`CfnCluster`、パブリックエンドポイント、削除保護なし） |
 | `lib/event-stack.ts`, `lib/web-stack.ts` | `Gekko10EventStack`, `Gekko10WebStack`: 構成のリストから関数を作る。構成を足すときはリストに 1 行足す |
 
@@ -164,9 +167,19 @@ npm run invoke -- <url> --path "/wait?ms=1000" --count 50 --concurrency 50
 - Web のメトリクス: 名前空間 `AWS/Lambda/Web`（FunctionName=`gekko10-web-noop`）と `AWS/Lambda/Web/Usage`（`EndpointActiveEnvironments` など）。リビジョンの次元はない。
 - 失敗時: レスポンスヘッダ `lambda-web-error-type` を見る。Web Functions はデプロイが Active でもサーバーが起動していないことがあるので、まずログを確認する。
 
+## 負荷生成（東京の Fargate タスク）
+手元の WSL からは通信が不安定でレイテンシも使えないので、東京の Fargate タスクから `invoke.ts` を実行する。使うときだけ起動し、終われば課金が止まる（詳細・費用・根拠は [docs/plan.md](docs/plan.md) の §9）。
+```sh
+npx cdk deploy Gekko10LoadStack     # 初回のみ。イメージが ECR に push される
+scripts/load-run.sh -- https://<endpoint> --path /db/read --duration 300 --concurrency 100
+```
+- 出力の `loadgenCoresUsed` が `loadgenCoresAvailable`（2）に近いときは、生成側が飽和しているので、その結果は採用しない。
+- 負荷の本番実行の前には、費用の見積もりを出して承認を得る。
+
 ## 後片付け
 ```sh
 npx cdk destroy Gekko10WebStack Gekko10EventStack   # 先に関数
+npx cdk destroy Gekko10LoadStack                    # 負荷生成の定義（ECR のイメージは残る）
 npx cdk destroy Gekko10DbStack                      # 最後にクラスタ（テーブルごと消える）
 ```
 Db スタックは Event / Web から参照されているので、先には消せない。Web のコード用バケットは `autoDeleteObjects` で中身ごと削除される。

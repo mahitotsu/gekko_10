@@ -52,9 +52,7 @@
   - Revision の全プロパティは「更新で置き換え」。
   - Endpoint の `RevisionWeights` は更新で無停止。`AutoDeploymentMode` は CFN にない。
   - (第三者) コードを変えると CFN は新しいリビジョンを作ってエンドポイントを付け替え、古いリビジョンを削除する。ネイティブの重み付き（カナリア）は使いにくい。 [Steele]
-  - **実機で確認済み（2026-10-18）**: 上の 3 リソースと S3 バケットの構成で、初回のデプロイが成功した（Revision と Endpoint は Active）。CDK の検証が出す `Unknown resource type 'AWS::Lambda::WebFunction'`（F3006）の警告は、CDK 側のスキーマが古いだけで、デプロイには影響しない。
-  - **CDK の `BucketDeployment`（`extract: false`）で S3 にコードを置く場合**: `objectKeys` が返すのは zip の**ファイル名だけ**で、`destinationKeyPrefix` は含まれない。出力先のキーは「プレフィックス + ファイル名」なので、プレフィックスを付けると Revision が存在しないキーを探して失敗する（実際に失敗した）。プレフィックスを付けずバケット直下に置けば一致する。
-  - CloudFormation のロググループの `Arn` 属性は `:*` で終わる。IAM に使うときは `:*` を足さない。
+  - 実機の確認（デプロイの成功、F3006 の警告、`BucketDeployment` の `objectKeys` とキーのプレフィックス、ロググループの `Arn` が `:*` で終わること）は [findings.md](findings.md) の §1-5。
 - **CDK**: aws-cdk-lib 2.273.0 に L1 の `CfnWebFunction` / `CfnWebFunctionRevision` / `CfnWebFunctionEndpoint` がある。L2 はない。SAM には `AWS::Serverless::WebFunction` がある（第三者）。このリポジトリは L1 で書いた。
 
 ## 5. HTTP
@@ -89,8 +87,7 @@
 - `ApplicationManaged`: Lambda は認証しない（誰でも呼べる）。リソースポリシーも評価されない。
 - 公開されたリソースポリシー（Principal `*` など）は付けられない。
 - CloudFront を前に置く場合は OAC（origin type `lambda`、署名は `always-amz-auth`）。
-- 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。**[DG] を採る**。**実機で確認済み（2026-10-18）**: IamAuth のエンドポイントは、署名なしが 403、サービス名 `lambda` の SigV4 署名付きが 200。
-- 実機で分かった差（関数URLとの違い）: Web Functions は `x-amz-content-sha256` が必須だが、**関数URLは `UNSIGNED-PAYLOAD` を付けると署名不一致で 403 になる**（付けない、または空ボディの実際の SHA-256 `e3b0c442…b855` なら 200）。両方に通る値として、空ボディの実際の SHA-256 を使う。
+- 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。**[DG] を採る**。実機の確認と、関数URLとの `UNSIGNED-PAYLOAD` の扱いの違いは [findings.md](findings.md) の §1-4。
 
 ## 8. メトリクスとログ
 [DG web-functions-monitoring.html, web-functions-monitoring-metrics.html]
@@ -121,7 +118,7 @@
 | 1 エンドポイントが重みを割り当てるリビジョン | 2 | 不可 |
 
 - **新規アカウントでは低く設定される**（使用実績に応じて自動で引き上げられる）。(第三者) 新しいアカウントで 200 vCPU（100 環境）/ 10,000 RPS だった。 [Steele]
-- **このアカウントの実測（ap-northeast-1、2026-10-18）**: `maxTotalArmVCpus` = 200（= 100 環境）、`maxTotalRateLimit` = 10,000 RPS、`maxEndpointsPerFunction` = 10、`maxRevisionsPerFunction` = 50。ドキュメントの既定値（2,000 vCPU / 100,000 RPS）より低い。大きな負荷試験の前に引き上げの申請が要る。
+- このアカウントの実測（ドキュメントの既定より低い）は [findings.md](findings.md) の §1-3。
 - 確認: `aws lambda-web get-web-account-settings --region ap-northeast-1`（`GET /2025-03-07/web-account-settings`）。レスポンスは `accountQuotas{maxEndpointsPerFunction, maxRevisionsPerFunction, maxTotalArmVCpus, maxTotalRateLimit}` と `accountUsage{functionCount}`。Service Quotas のコンソールにも出る。
 
 ## 10. 料金
@@ -130,17 +127,7 @@
 - CPU $0.0000276944 / vCPU 秒（実際に使った CPU 時間。1 ms 単位）
 - メモリ $0.0000036667 / GB 秒（環境が存在する間の**消費メモリ**。アイドル中も課金される）
 - データ転送は EC2 の料金に準ずる
-- **東京の単価はページに載っていない**。AWS Price List API（`AWSLambda` サービス）で取得する必要がある。未確認。
+- 東京の単価はページに載っていない。AWS Price List API（`AWSLambda` サービス）で取得する（取得した値は [findings.md](findings.md) に記録する）。
 
 ## 11. 確認状況
-確認済み（2026-10-18、実機）:
-- IamAuth への直接 SigV4（上記 §7）
-- CloudFormation / CDK(L1) によるデプロイ（§4）。`aws lambda-web` は AWS CLI 2.38.1 で動作（2.31.35 では不可）
-- 東京のクォータ（§9）
-- メトリクス: `AWS/Lambda/Web/Usage` の `EndpointActiveEnvironments`（次元: FunctionName, EndpointName, ExecutionRegion）と、`AWS/Lambda/Web` の `EnvironmentConcurrentRequests`（次元: FunctionName）が出る。値はクライアント側の観測と一致した。180 秒の持続負荷（並行 100）では、1 分ごとの `EndpointActiveEnvironments` が 13 → 10 → 4 → 4、`EnvironmentConcurrentRequests` の最大が 11 → 26 → 26 → 26 で、アプリ側（環境 13 → 10 → 4、環境あたりの最大 約 10 → 約 25）と一致した。`ExecutedRequests` の合計 17,289 も、クライアントが送った件数と一致した。1 分より短い変化は見えない。
-- コスト計算に使う値（同じ負荷の時間帯、1 時間の集計）: `EnvironmentCPUTime` の Sum = 40,105 ms（1 リクエストあたり約 2.3 ms）、`EnvironmentActiveTime` の Sum = 1,832,869 ms（約 1,833 環境秒）、`EnvironmentMaxMemoryUsage` の最大 = 206 MB。us-east-1 の単価で概算すると約 $0.008（リクエスト $0.0052 + CPU $0.0011 + メモリ 最大でも $0.0014）。
-
-未確認:
-- CloudFormation でリビジョンを置き換えたときの、旧リビジョン削除とトラフィックの切り替え順序
-- 東京の単価（Price List API で取得する）
-- システムログのイベント（`platform.*`）の実際の形式
+実機で確認したこと（IamAuth の SigV4、CloudFormation / CDK でのデプロイ、クォータ、メトリクスの一致、コスト計算に使う値）と、まだ確認していないことは [findings.md](findings.md) にまとめた。この文書は、仕様と出典の調査メモとして保つ。

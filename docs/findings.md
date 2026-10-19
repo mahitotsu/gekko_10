@@ -217,10 +217,30 @@
 - ローカルでの確認: 実行側を本番規模（1,600 RPS・2,500 RPS の段）で通し、SIGTERM で `P1_ABORTED` を出して止まること、子プロセスが残らないことを確認した。
 - 実績の費用: 確認 A が約 $0.01、確認 B が約 $0.14（リクエスト $0.086、CPU $0.011、メモリ $0.009、Fargate $0.03。単価は §3-3）。
 
+### 3-6. 較正: 時間の内訳、アプリの形のエンドポイントの重さ、DPU
+**結論**
+- **Web と Event の DB なしの差（p50 で約 6 ms）は、アプリの中にはない**。`/db/read` のハンドラ内の時間（`appMs`）は Event 2.3〜2.5 ms、Web 2.5〜3.1 ms でほぼ同じ。クライアントの時間からそれを引いた「アプリの外」が、Event 12.3〜14.5 ms、Web 5.7〜6.3 ms で、差のほぼすべてがここにある。リクエストの変換（アプリの中の処理）の差ではなく、関数URL と Web のエンドポイントの入口・経路の差と読める（原因の特定まではしていない）。
+- CPU 処理（`/app/render`、SHA-256 を 10,000 回）は、Event（1 GB）で 26.9 ms、Web で 15.9 ms。同じ仕事量でも、Event の 1 GB は約 0.57 vCPU 分しかないため遅い（原因は推定）。
+- 重い集計（`/app/report`）は、k を大きくすると時間と DPU がほぼ比例して増える（下表）。約 250 ms にするには k=800 で、DPU は 0.58 / 件（k=300 の 3.5 倍）。DPU が費用の主因になる。
+- Event の初期化時間（`Init Duration`）の p50 は 225〜270 ms（`REPORT` 行から）。
+- 1 リクエストあたりの DPU: detail（11 文）0.050、write 0.061、external（読み取り + INSERT）0.070、render 0.005。
+
+| `/app/report` の k | クエリ（p50） | DPU / 件 |
+|---|---|---|
+| 300 | 38.8 ms | 0.166 |
+| 450 | 81.7 ms | 0.264 |
+| 600 | 141.5 ms | 0.388 |
+| 800 | 247.2 ms | 0.578 |
+
+**根拠**（10-19 23:17〜10-20 00:44 JST と 00:20〜01:06 JST、東京の Fargate から。ビルド 7afe79f…）
+- `npm run suite-start -- --suite calibration --seed 20261020`（タスク `bb0127b8…`）と `--suite calibration-report`（タスク `d721390e…`）。結果は `results/calibration-20261020/`、`results/calibration-report-20261020/`（`npm run analyze -- <dir>` で再現できる）。
+- 内訳: K（`/db/read`、50〜200 RPS）の各段の `appMs` / `outsideMs` の p50。Event は `event-dsql-reuse`、Web は `web-dsql-pool`。
+- DPU: 各回の `TotalDPU`（`AWS/AuroraDSQL`）の合計を成功件数で割った値。Q1〜Q5 は 20 RPS × 60 秒（1,200 件）、R1〜R3 は 20 RPS × 45 秒（900 件）。
+- 合格基準 (a)〜(f) は通過。(a) は event-dsql-reuse 15.8 ms（参考 15.7）、web-dsql-pool 9.4 ms（参考 8.6、許容 ±1）。
+
 ## 4. 未確認
 - 実際の請求（Cost Explorer）と、P1 のコスト計算（[report.md](report.md) §3-4）の照合。
 - DB 待ちが長いときの Web のコスト（P1 の読み取りは DB 待ちが約 3 ms で、Web の方が約 2 倍高かった。[report.md](report.md)）。
-- 低い負荷（50〜200 RPS）で、Web の DSQL 構成の環境が 4〜13 と多く、DB なしは 3 な理由。
 - `53300`（接続の総数）が実際にどの SQLSTATE とメッセージで返るか（`53400` は確認済み、§2-7）。
 - `reuse` の再接続（凍結から復帰した後に接続が切れていた場合）の実機での挙動。単体テストでは確認済み。
 - 関数URLに追加料金がないこと。

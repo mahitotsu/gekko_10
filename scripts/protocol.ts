@@ -8,7 +8,8 @@ export const PROTOCOL = "v2";
 const APP_CONFIGS = ["event-dsql-reuse", "web-dsql-pool10"];
 
 /** Parameters of the application-shaped endpoints, as fixed by the calibration. */
-export const PARAMS = { detailN: 11, reportK: 300, renderW: 10_000, externalMs: 1000 };
+// Calibration (docs/plan.md §8): /app/report with k=800 takes about 250 ms (k=300: 39 ms, 450: 82 ms, 600: 141 ms) and costs 0.58 DPU.
+export const PARAMS = { detailN: 11, reportK: 800, renderW: 10_000, externalMs: 1000 };
 
 const detail = `/app/detail?n=${PARAMS.detailN}`;
 const report = `/app/report?k=${PARAMS.reportK}`;
@@ -27,8 +28,9 @@ export const MEASUREMENT: CaseDef[] = [
   },
   // C: a sudden spike from a trickle: the first spike meets cold functions, the second one warm functions.
   { id: "C", path: detail, configs: APP_CONFIGS, steps: [10, 10, 1500, 1500, 1500, 1500, 10, 10, 10, 10, 1500, 1500, 1500, 1500, 10, 10], stepSeconds: 30 },
-  // D: a heavy aggregate only: the database work held per request is long enough for a pool of 10 to run short.
-  { id: "D", path: report, configs: [...APP_CONFIGS, "web-dsql-pool"], steps: [50, 100, 200, 400], stepSeconds: 90 },
+  // D: a heavy aggregate only: the database work held per request is long enough for a pool of 10 to run short. The DPU of the
+  // aggregate (0.58 per request) is the main cost, so the steps are short and start at 100 RPS (12.5 to 100 requests in the database at once).
+  { id: "D", path: report, configs: [...APP_CONFIGS, "web-dsql-pool"], steps: [100, 200, 400], stepSeconds: 45 },
 ];
 
 /**
@@ -44,4 +46,7 @@ export const CALIBRATION: CaseDef[] = [
   { id: "Q5", path: `/app/external?ms=${PARAMS.externalMs}`, configs: ["event-dsql-reuse"], steps: [20], stepSeconds: 60 },
 ];
 
-export const SUITES = { measurement: MEASUREMENT, calibration: CALIBRATION } as const;
+/** Second calibration step: the weight of /app/report for several k, to read its duration and DPU (the cost of case D depends on it). */
+export const CALIBRATION_REPORT: CaseDef[] = [450, 600, 800].map((k, i) => ({ id: `R${i + 1}`, path: `/app/report?k=${k}`, configs: ["event-dsql-reuse"], steps: [20], stepSeconds: 45 }));
+
+export const SUITES = { measurement: MEASUREMENT, calibration: CALIBRATION, "calibration-report": CALIBRATION_REPORT } as const;

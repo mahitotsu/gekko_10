@@ -65,12 +65,12 @@ function main() {
   });
   const suiteName = values.suite as keyof typeof SUITES;
   const cases = SUITES[suiteName];
-  if (!cases) throw new Error(`unknown suite: ${values.suite} (measurement | calibration)`);
+  if (!cases) throw new Error(`unknown suite: ${values.suite} (measurement | calibration | calibration-report)`);
   const today = new Date().toLocaleDateString("sv-SE");
   const seed = values.seed ?? `${suiteName}-${today}`;
   const out = values.out ?? `results/${today}`;
   const only = values.only?.split(",");
-  const sets = (values.sets ?? (suiteName === "calibration" ? "2" : "1,2,3")).split(",").map(Number);
+  const sets = (values.sets ?? (suiteName.startsWith("calibration") ? "2" : "1,2,3")).split(",").map(Number);
 
   const build = buildId();
   if (build.endsWith("-dirty") && !values["allow-dirty"]) {
@@ -93,7 +93,7 @@ function main() {
     cases,
     only,
     firstWait: Number(values["first-wait"]),
-    minIdleSeconds: values["min-idle"] ? Number(values["min-idle"]) : suiteName === "calibration" ? 300 : undefined,
+    minIdleSeconds: values["min-idle"] ? Number(values["min-idle"]) : suiteName.startsWith("calibration") ? 300 : undefined,
     post: { clusterId, metricsLagSeconds: METRICS_LAG_SECONDS },
   });
 

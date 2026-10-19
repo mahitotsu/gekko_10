@@ -1,0 +1,361 @@
+{
+ "sets": [
+  2
+ ],
+ "prices": {
+  "eventRequest": 2e-7,
+  "eventGbSecond": 0.0000133334,
+  "webRequest": 3e-7,
+  "webVcpuSecond": 0.0000322421,
+  "webGbSecond": 0.0000042688,
+  "dsqlDpu": 0.00001,
+  "fargateHour": 0.12824
+ },
+ "verdict": {
+  "pass": true,
+  "checks": [
+   {
+    "id": "a",
+    "title": "計測が測定を歪めない（較正の /db/read）",
+    "status": "na",
+    "detail": "較正のケースなし"
+   },
+   {
+    "id": "b",
+    "title": "内訳が閉じる（appMs ≤ serviceMs）",
+    "status": "pass",
+    "detail": "0 / 2700 件が矛盾（許容 0.1%）"
+   },
+   {
+    "id": "c",
+    "title": "生成側・送信・終了コード",
+    "status": "pass",
+    "detail": "測定した 3 回すべて基準内"
+   },
+   {
+    "id": "d",
+    "title": "版の一致",
+    "status": "pass",
+    "detail": "期待 7afe79feb114eee1a4fb3974404dfa72796adbba、観測 7afe79feb114eee1a4fb3974404dfa72796adbba"
+   },
+   {
+    "id": "e",
+    "title": "送信数と AWS 側の件数の一致",
+    "status": "pass",
+    "detail": "3 回すべて 0.1% 以内"
+   },
+   {
+    "id": "f",
+    "title": "セット間の p50 の差が 2 ms 以内",
+    "status": "pass",
+    "detail": "3 の段すべて以内"
+   }
+  ]
+ },
+ "runs": [
+  {
+   "case": "R3",
+   "set": 2,
+   "index": 1,
+   "name": "event-dsql-reuse",
+   "adopted": true,
+   "reasons": [],
+   "loadgenCores": 0.05,
+   "steps": [
+    {
+     "rate": 20,
+     "adopted": true,
+     "scheduled": 900,
+     "sent": 900,
+     "dropped": 0,
+     "ok": 900,
+     "failures": {},
+     "fail53400": 0,
+     "failOther": 0,
+     "p50": 262.1,
+     "p95": 272.9,
+     "p99": 1065.3,
+     "serviceP50": 261.2,
+     "environments": 21,
+     "coldStarts": 21,
+     "newConnectionPct": 2.3,
+     "acquireP50": 0,
+     "acquireP99": 175.8,
+     "queryP50": 247.2,
+     "appMsP50": 247.3,
+     "outsideP50": 13.8,
+     "appOtherP50": 0.1,
+     "queriesPerRequest": 1,
+     "inconsistent": 0,
+     "appCount": 900,
+     "lateRate": 0,
+     "builds": [
+      "7afe79feb114eee1a4fb3974404dfa72796adbba"
+     ],
+     "lambdaRequests": 675,
+     "concurrentMax": 22,
+     "dsqlConnectCalls": 15,
+     "dsqlConnectionsMax": 1,
+     "dpu": 201.73762041650392,
+     "cost": {
+      "requests": 0.000135,
+      "compute": 0.0023421589096659953,
+      "memory": 0,
+      "dsql": 0.0020173762041650395,
+      "total": 0.004494535113831035
+     }
+    }
+   ],
+   "total": {
+    "sent": 900,
+    "ok": 900,
+    "lambdaRequests": 900,
+    "notCounted": 0,
+    "dsqlConnectCalls": 21,
+    "dpu": 520.4086604033203,
+    "cost": {
+     "requests": 0.00017999999999999998,
+     "compute": 0.0031228785462213264,
+     "memory": 0,
+     "dsql": 0.005204086604033203,
+     "total": 0.00850696515025453
+    },
+    "costBilled": {
+     "requests": 0.00017999999999999998,
+     "compute": 0.0031911359556,
+     "memory": 0,
+     "dsql": 0.005204086604033203,
+     "total": 0.008575222559633203
+    },
+    "coldStartsReported": 21,
+    "initP50Ms": 231.26,
+    "costWebMemoryMaxBound": null
+   },
+   "gapSeconds": 60
+  },
+  {
+   "case": "R2",
+   "set": 2,
+   "index": 2,
+   "name": "event-dsql-reuse",
+   "adopted": true,
+   "reasons": [],
+   "loadgenCores": 0.04,
+   "steps": [
+    {
+     "rate": 20,
+     "adopted": true,
+     "scheduled": 900,
+     "sent": 900,
+     "dropped": 0,
+     "ok": 900,
+     "failures": {},
+     "fail53400": 0,
+     "failOther": 0,
+     "p50": 156,
+     "p95": 162.9,
+     "p99": 167.9,
+     "serviceP50": 155.2,
+     "environments": 6,
+     "coldStarts": 0,
+     "newConnectionPct": 0,
+     "acquireP50": 0,
+     "acquireP99": 0,
+     "queryP50": 141.5,
+     "appMsP50": 141.6,
+     "outsideP50": 13.4,
+     "appOtherP50": 0.1,
+     "queriesPerRequest": 1,
+     "inconsistent": 0,
+     "appCount": 900,
+     "lateRate": 0,
+     "builds": [
+      "7afe79feb114eee1a4fb3974404dfa72796adbba"
+     ],
+     "lambdaRequests": 616.4652666666667,
+     "concurrentMax": 6,
+     "dsqlConnectCalls": 0,
+     "dsqlConnectionsMax": 21,
+     "dpu": 119.6312899358288,
+     "cost": {
+      "requests": 0.00012329305333333334,
+      "compute": 0.0011880536953049585,
+      "memory": 0,
+      "dsql": 0.001196312899358288,
+      "total": 0.0025076596479965798
+     }
+    }
+   ],
+   "total": {
+    "sent": 900,
+    "ok": 900,
+    "lambdaRequests": 900,
+    "notCounted": 0,
+    "dsqlConnectCalls": 0,
+    "dpu": 349.45225553527234,
+    "cost": {
+     "requests": 0.00017999999999999998,
+     "compute": 0.0017422768440339964,
+     "memory": 0,
+     "dsql": 0.0034793328150878908,
+     "total": 0.005401609659121887
+    },
+    "costBilled": {
+     "requests": 0.00017999999999999998,
+     "compute": 0.0017423820452,
+     "memory": 0,
+     "dsql": 0.003494522555352724,
+     "total": 0.005416904600552724
+    },
+    "coldStartsReported": 0,
+    "initP50Ms": 0,
+    "costWebMemoryMaxBound": null
+   },
+   "gapSeconds": 300
+  },
+  {
+   "case": "R1",
+   "set": 2,
+   "index": 3,
+   "name": "event-dsql-reuse",
+   "adopted": true,
+   "reasons": [],
+   "loadgenCores": 0.04,
+   "steps": [
+    {
+     "rate": 20,
+     "adopted": true,
+     "scheduled": 900,
+     "sent": 900,
+     "dropped": 0,
+     "ok": 900,
+     "failures": {},
+     "fail53400": 0,
+     "failOther": 0,
+     "p50": 97.1,
+     "p95": 103.4,
+     "p99": 110.5,
+     "serviceP50": 96.5,
+     "environments": 3,
+     "coldStarts": 0,
+     "newConnectionPct": 0,
+     "acquireP50": 0,
+     "acquireP99": 0,
+     "queryP50": 81.7,
+     "appMsP50": 81.8,
+     "outsideP50": 14.2,
+     "appOtherP50": 0.1,
+     "queriesPerRequest": 1,
+     "inconsistent": 0,
+     "appCount": 900,
+     "lateRate": 0,
+     "builds": [
+      "7afe79feb114eee1a4fb3974404dfa72796adbba"
+     ],
+     "lambdaRequests": 358.8683,
+     "concurrentMax": 3,
+     "dsqlConnectCalls": 0,
+     "dsqlConnectionsMax": 8,
+     "dpu": 99.4161361270875,
+     "cost": {
+      "requests": 0.00007177366,
+      "compute": 0.0004048189138417569,
+      "memory": 0,
+      "dsql": 0.0009941613612708751,
+      "total": 0.001470753935112632
+     }
+    }
+   ],
+   "total": {
+    "sent": 900,
+    "ok": 900,
+    "lambdaRequests": 900,
+    "notCounted": 0,
+    "dsqlConnectCalls": 0,
+    "dpu": 238.00320125,
+    "cost": {
+     "requests": 0.00017999999999999998,
+     "compute": 0.0010153953430846645,
+     "memory": 0,
+     "dsql": 0.0023800320125,
+     "total": 0.0035754273555846645
+    },
+    "costBilled": {
+     "requests": 0.00017999999999999998,
+     "compute": 0.0010152984098000001,
+     "memory": 0,
+     "dsql": 0.0023800320125,
+     "total": 0.0035753304223000004
+    },
+    "coldStartsReported": 0,
+    "initP50Ms": 0,
+    "costWebMemoryMaxBound": null
+   },
+   "gapSeconds": 300
+  }
+ ],
+ "plan": {
+  "taskId": "d721390e87334859bdbb64f6cfcf5f50",
+  "startedAt": "2026-10-19T15:20:12.559Z",
+  "expectedSeconds": 930,
+  "plan": {
+   "protocol": "v2/calibration-report",
+   "seed": "20261020",
+   "build": "7afe79feb114eee1a4fb3974404dfa72796adbba",
+   "urls": {
+    "event-dsql-reuse": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws"
+   },
+   "cases": {
+    "R1": {
+     "path": "/app/report?k=450",
+     "steps": [
+      20
+     ],
+     "stepSeconds": 45
+    },
+    "R2": {
+     "path": "/app/report?k=600",
+     "steps": [
+      20
+     ],
+     "stepSeconds": 45
+    },
+    "R3": {
+     "path": "/app/report?k=800",
+     "steps": [
+      20
+     ],
+     "stepSeconds": 45
+    }
+   },
+   "runs": [
+    {
+     "set": 2,
+     "index": 1,
+     "case": "R3",
+     "name": "event-dsql-reuse",
+     "waitSeconds": 60
+    },
+    {
+     "set": 2,
+     "index": 2,
+     "case": "R2",
+     "name": "event-dsql-reuse",
+     "waitSeconds": 300
+    },
+    {
+     "set": 2,
+     "index": 3,
+     "case": "R1",
+     "name": "event-dsql-reuse",
+     "waitSeconds": 300
+    }
+   ],
+   "post": {
+    "clusterId": "xzufgtayy7lkiiup2abhk43p7a",
+    "metricsLagSeconds": 180
+   }
+  }
+ },
+ "fargateUsd": 0.028343711666666663
+}

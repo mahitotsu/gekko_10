@@ -1,0 +1,63 @@
+{
+ "taskId": "d721390e87334859bdbb64f6cfcf5f50",
+ "startedAt": "2026-10-19T15:20:12.559Z",
+ "expectedSeconds": 930,
+ "plan": {
+  "protocol": "v2/calibration-report",
+  "seed": "20261020",
+  "build": "7afe79feb114eee1a4fb3974404dfa72796adbba",
+  "urls": {
+   "event-dsql-reuse": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws"
+  },
+  "cases": {
+   "R1": {
+    "path": "/app/report?k=450",
+    "steps": [
+     20
+    ],
+    "stepSeconds": 45
+   },
+   "R2": {
+    "path": "/app/report?k=600",
+    "steps": [
+     20
+    ],
+    "stepSeconds": 45
+   },
+   "R3": {
+    "path": "/app/report?k=800",
+    "steps": [
+     20
+    ],
+    "stepSeconds": 45
+   }
+  },
+  "runs": [
+   {
+    "set": 2,
+    "index": 1,
+    "case": "R3",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 60
+   },
+   {
+    "set": 2,
+    "index": 2,
+    "case": "R2",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 3,
+    "case": "R1",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   }
+  ],
+  "post": {
+   "clusterId": "xzufgtayy7lkiiup2abhk43p7a",
+   "metricsLagSeconds": 180
+  }
+ }
+}

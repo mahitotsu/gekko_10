@@ -1,0 +1,85 @@
+[
+ {
+  "target": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws/app/report?k=600",
+  "startedAt": "2026-10-19T15:26:57.962Z",
+  "endedAt": "2026-10-19T15:27:43.076Z",
+  "options": {
+   "rates": [
+    20
+   ],
+   "stepSeconds": 45,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.04,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 20,
+    "seconds": 45,
+    "scheduled": 900,
+    "sent": 900,
+    "dropped": 0,
+    "completed": 900,
+    "ok": 900,
+    "failures": {},
+    "latencyMs": {
+     "p50": 156,
+     "p95": 162.9,
+     "p99": 167.9
+    },
+    "serviceMs": {
+     "p50": 155.2,
+     "p95": 162.2,
+     "p99": 167
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 141.5,
+      "p95": 145.7,
+      "p99": 150.6
+     },
+     "queriesPerRequest": 1
+    },
+    "app": {
+     "appMs": {
+      "p50": 141.6,
+      "p95": 145.8,
+      "p99": 150.7
+     },
+     "outsideMs": {
+      "p50": 13.4,
+      "p95": 19.2,
+      "p99": 22.6
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 900
+    },
+    "achievedRps": 20,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 6,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.04,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   }
+  ]
+ }
+]

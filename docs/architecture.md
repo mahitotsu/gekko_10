@@ -26,7 +26,7 @@
 | `scripts/bundle.mjs` | 両方を同じ esbuild 設定でバンドル（`dist/web`, `dist/event`） |
 
 - LWA（Lambda Web Adapter）は使わない。
-- 結果の解釈に影響する差: リクエストの変換層が異なる（Web は Node の `IncomingMessage` → `Request`、Event は関数URLのイベント JSON → `Request`）。どちらも小さい見込みだが、DB なしの `/noop` で差を把握し、DSQL の結果に注記する。
+- 結果の解釈に影響する差: DB なしでも Web は Event より p50 が約 6 ms 短い。内訳を測ると、アプリ内の時間は同じで、差はアプリの外（関数URL と Web のエンドポイントの入口・経路）にある（[findings.md](findings.md) §3-6）。DSQL の結果は、この差を引いて読む。
 
 ## 3. 関数の一覧
 | 関数 | 形態 | `DB_MODE` | 接続の持ち方 |

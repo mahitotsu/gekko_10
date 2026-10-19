@@ -1,0 +1,19 @@
+{
+ "taskId": "d721390e87334859bdbb64f6cfcf5f50",
+ "args": [
+  "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws",
+  "--path",
+  "/app/report?k=800",
+  "--steps",
+  "20",
+  "--step-seconds",
+  "45"
+ ],
+ "exitCode": "0",
+ "timedOut": false,
+ "aborted": false,
+ "startedAt": "2026-10-19T15:21:12.563Z",
+ "stoppedAt": "2026-10-19T15:21:57.875Z",
+ "waitSeconds": 60,
+ "complete": true
+}

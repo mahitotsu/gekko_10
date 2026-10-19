@@ -1,0 +1,15 @@
+{
+ "taskId": "2874935bcb5140a79a4ffaf6f3e79c33",
+ "args": [
+  "https://2yf2ktd5tmxrxddirq4cfpp3yq0zvrex.lambda-url.ap-northeast-1.on.aws",
+  "--path",
+  "/db/read"
+ ],
+ "exitCode": "0",
+ "timedOut": false,
+ "aborted": false,
+ "startedAt": "2026-10-18T21:26:30.890Z",
+ "stoppedAt": "2026-10-18T21:37:01.899Z",
+ "waitSeconds": 300,
+ "complete": true
+}

@@ -12,7 +12,8 @@
     "db-setup": "tsx scripts/db-setup.ts",
     "collect-metrics": "tsx scripts/collect-metrics.ts",
     "p1-start": "tsx scripts/p1-start.ts",
-    "p1-fetch": "tsx scripts/p1-fetch.ts"
+    "p1-fetch": "tsx scripts/p1-fetch.ts",
+    "analyze": "tsx scripts/analyze.ts"
   },
   "dependencies": {
     "@aws/aurora-dsql-node-postgres-connector": "^0.1.9",

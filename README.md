@@ -8,8 +8,8 @@ AWS Lambda の **Web Functions** と **Event Functions（関数URL）** を、**
 
 ## 現在の状況
 - 完了: DB なしの関数、DSQL クラスタ、DSQL につなぐ 4 つの関数、負荷生成の仕組み（東京の Fargate タスク）。
-- 次: 負荷試験の設計と実行。結果は [docs/findings.md](docs/findings.md) と報告にまとめる予定です。
-- 検証の途中で、結論はまだ出ていません。設計は [docs/plan.md](docs/plan.md) にあります。
+- 次: P2〜P4 の負荷試験。P1（段階的な定常負荷）の結果は [docs/report.md](docs/report.md) にあります。
+- 検証の途中です。P1 の結論は出ましたが、P2〜P4 は未実施です。設計は [docs/plan.md](docs/plan.md) にあります。
 
 ## 比較する関数
 | 関数 | 形態 | DB の接続 |
@@ -78,6 +78,7 @@ npx cdk destroy Gekko10DbStack                                       # 最後に
 |---|---|
 | [docs/plan.md](docs/plan.md) | 目的、仮説、比較する構成、負荷パターン、計測項目、コストの計算、段階 |
 | [docs/architecture.md](docs/architecture.md) | 構成、エンドポイントの仕様、設計の判断、運用の手順 |
+| [docs/report.md](docs/report.md) | P1 の結果（結論と根拠） |
 | [docs/findings.md](docs/findings.md) | 実機で確かめた事実（結論と根拠）、未確認の一覧 |
 | [docs/web-functions-notes.md](docs/web-functions-notes.md) | Web Functions の仕様の調査メモ（出典つき） |
 | [CLAUDE.md](CLAUDE.md) | AI（Claude Code）向けの作業の約束事 |

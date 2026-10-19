@@ -1,0 +1,322 @@
+[
+ {
+  "target": "https://2yf2ktd5tmxrxddirq4cfpp3yq0zvrex.lambda-url.ap-northeast-1.on.aws/db/read",
+  "startedAt": "2026-10-18T16:53:30.187Z",
+  "endedAt": "2026-10-18T17:04:01.184Z",
+  "options": {
+   "rates": [
+    25,
+    50,
+    100,
+    200,
+    400,
+    800,
+    1600
+   ],
+   "stepSeconds": 90,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.14,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 25,
+    "seconds": 90,
+    "scheduled": 2250,
+    "sent": 2250,
+    "dropped": 0,
+    "completed": 2250,
+    "ok": 2250,
+    "failures": {},
+    "achievedRps": 25,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "latencyMs": {
+     "p50": 28.7,
+     "p95": 39.5,
+     "p99": 221.8
+    },
+    "serviceMs": {
+     "p50": 28.1,
+     "p95": 38.7,
+     "p99": 220.2
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 11.8,
+      "p95": 18.5,
+      "p99": 93.3
+     },
+     "queryMs": {
+      "p50": 2.2,
+      "p95": 3.8,
+      "p99": 18
+     }
+    },
+    "environments": 18,
+    "coldStarts": 18,
+    "peakInFlight": 1,
+    "loadgenCores": 0.03
+   },
+   {
+    "step": 1,
+    "rate": 50,
+    "seconds": 90,
+    "scheduled": 4500,
+    "sent": 4500,
+    "dropped": 0,
+    "completed": 4500,
+    "ok": 4500,
+    "failures": {},
+    "achievedRps": 50,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "latencyMs": {
+     "p50": 29.9,
+     "p95": 37.9,
+     "p99": 42.3
+    },
+    "serviceMs": {
+     "p50": 29.2,
+     "p95": 37.2,
+     "p99": 41.4
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 12.2,
+      "p95": 18.8,
+      "p99": 20.6
+     },
+     "queryMs": {
+      "p50": 2.3,
+      "p95": 3.8,
+      "p99": 4.2
+     }
+    },
+    "environments": 3,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.04
+   },
+   {
+    "step": 2,
+    "rate": 100,
+    "seconds": 90,
+    "scheduled": 9000,
+    "sent": 9000,
+    "dropped": 0,
+    "completed": 9000,
+    "ok": 9000,
+    "failures": {},
+    "achievedRps": 100,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "latencyMs": {
+     "p50": 27.5,
+     "p95": 34.4,
+     "p99": 40.4
+    },
+    "serviceMs": {
+     "p50": 26.9,
+     "p95": 33.7,
+     "p99": 39.7
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 11.5,
+      "p95": 16,
+      "p99": 20.3
+     },
+     "queryMs": {
+      "p50": 2.1,
+      "p95": 3.2,
+      "p99": 4.2
+     }
+    },
+    "environments": 6,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.05
+   },
+   {
+    "step": 3,
+    "rate": 200,
+    "seconds": 90,
+    "scheduled": 18000,
+    "sent": 18000,
+    "dropped": 0,
+    "completed": 18000,
+    "ok": 9954,
+    "failures": {
+     "503 db:53400/connect": 8046
+    },
+    "achievedRps": 110.6,
+    "lateRate": 0,
+    "lateP95Ms": 1.1,
+    "latencyMs": {
+     "p50": 29.8,
+     "p95": 38.8,
+     "p99": 49.4
+    },
+    "serviceMs": {
+     "p50": 29.2,
+     "p95": 38.1,
+     "p99": 48.6
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 12,
+      "p95": 18.2,
+      "p99": 23.6
+     },
+     "queryMs": {
+      "p50": 2.2,
+      "p95": 3.6,
+      "p99": 4.3
+     }
+    },
+    "environments": 12,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.07
+   },
+   {
+    "step": 4,
+    "rate": 400,
+    "seconds": 90,
+    "scheduled": 36000,
+    "sent": 36000,
+    "dropped": 0,
+    "completed": 36000,
+    "ok": 8960,
+    "failures": {
+     "503 db:53400/connect": 27040
+    },
+    "achievedRps": 99.6,
+    "lateRate": 0,
+    "lateP95Ms": 1.2,
+    "latencyMs": {
+     "p50": 29.4,
+     "p95": 38.1,
+     "p99": 44.4
+    },
+    "serviceMs": {
+     "p50": 28.8,
+     "p95": 37.3,
+     "p99": 43.5
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 11.9,
+      "p95": 17.9,
+      "p99": 21.9
+     },
+     "queryMs": {
+      "p50": 2.2,
+      "p95": 3.4,
+      "p99": 4.2
+     }
+    },
+    "environments": 14,
+    "coldStarts": 3,
+    "peakInFlight": 1,
+    "loadgenCores": 0.13
+   },
+   {
+    "step": 5,
+    "rate": 800,
+    "seconds": 90,
+    "scheduled": 72000,
+    "sent": 72000,
+    "dropped": 0,
+    "completed": 72000,
+    "ok": 9264,
+    "failures": {
+     "503 db:53400/connect": 62736
+    },
+    "achievedRps": 102.9,
+    "lateRate": 0,
+    "lateP95Ms": 1.3,
+    "latencyMs": {
+     "p50": 29.6,
+     "p95": 47,
+     "p99": 206.7
+    },
+    "serviceMs": {
+     "p50": 28.9,
+     "p95": 45,
+     "p99": 206.4
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 12.2,
+      "p95": 18,
+      "p99": 69.7
+     },
+     "queryMs": {
+      "p50": 2.3,
+      "p95": 3.5,
+      "p99": 91.8
+     }
+    },
+    "environments": 115,
+    "coldStarts": 50,
+    "peakInFlight": 1,
+    "loadgenCores": 0.24
+   },
+   {
+    "step": 6,
+    "rate": 1600,
+    "seconds": 90,
+    "scheduled": 144000,
+    "sent": 144000,
+    "dropped": 0,
+    "completed": 144000,
+    "ok": 9098,
+    "failures": {
+     "503 db:53400/connect": 134902
+    },
+    "achievedRps": 101.1,
+    "lateRate": 0,
+    "lateP95Ms": 1.5,
+    "latencyMs": {
+     "p50": 30.9,
+     "p95": 41.5,
+     "p99": 234.8
+    },
+    "serviceMs": {
+     "p50": 30.1,
+     "p95": 40,
+     "p99": 234.2
+    },
+    "db": {
+     "newConnectionPct": 100,
+     "acquireMs": {
+      "p50": 13.1,
+      "p95": 18,
+      "p99": 93.7
+     },
+     "queryMs": {
+      "p50": 2.5,
+      "p95": 3.6,
+      "p99": 97.1
+     }
+    },
+    "environments": 135,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.4
+   }
+  ]
+ }
+]

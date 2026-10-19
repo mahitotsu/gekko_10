@@ -1,0 +1,911 @@
+{
+ "region": "ap-northeast-1",
+ "periodSeconds": 60,
+ "start": "2026-10-18T20:37:54Z",
+ "end": "2026-10-18T20:58:26Z",
+ "clusterId": "xzufgtayy7lkiiup2abhk43p7a",
+ "series": [
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "ExecutedRequests",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     135
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     1500
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     2384
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     3267
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     6000
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     9531
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     13047
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     24000
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     38036
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     51852
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     96001
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     39997
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "HTTPResponseStatusClass4XX",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main"
+   },
+   "points": []
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "HTTPResponseStatusClass5XX",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main"
+   },
+   "points": []
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "EnvironmentActiveTime",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     2613
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     477511
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     60000
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     300001
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     120000
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     179998
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     180001
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     180638
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     301540
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     480755
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     798756
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     4376460
+    ],
+    [
+     "2026-10-19T05:51:00+09:00",
+     2400000
+    ],
+    [
+     "2026-10-19T05:52:00+09:00",
+     6179997
+    ],
+    [
+     "2026-10-19T05:53:00+09:00",
+     3060003
+    ],
+    [
+     "2026-10-19T05:54:00+09:00",
+     5700007
+    ],
+    [
+     "2026-10-19T05:55:00+09:00",
+     8866091
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "EnvironmentCPUTime",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     1915
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     3607
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     784
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     5411
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     2570
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     8453
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     6387
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     14738
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     20581
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     42959
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     55908
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     148838
+    ],
+    [
+     "2026-10-19T05:51:00+09:00",
+     24002
+    ],
+    [
+     "2026-10-19T05:52:00+09:00",
+     31040
+    ],
+    [
+     "2026-10-19T05:53:00+09:00",
+     5741
+    ],
+    [
+     "2026-10-19T05:54:00+09:00",
+     9622
+    ],
+    [
+     "2026-10-19T05:55:00+09:00",
+     14393
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "EnvironmentMaxMemoryUsage",
+   "stat": "Maximum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     157
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     176
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     181
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     186
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     209
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     238
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     290
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     291
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     294
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     291
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     300
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     295
+    ],
+    [
+     "2026-10-19T05:51:00+09:00",
+     300
+    ],
+    [
+     "2026-10-19T05:52:00+09:00",
+     300
+    ],
+    [
+     "2026-10-19T05:53:00+09:00",
+     300
+    ],
+    [
+     "2026-10-19T05:54:00+09:00",
+     300
+    ],
+    [
+     "2026-10-19T05:55:00+09:00",
+     300
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "EnvironmentMaxMemoryUsage",
+   "stat": "Average",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     153.375
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     172.625
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     181
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     184.66666666666666
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     205
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     238
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     285.5
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     221.75
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     203.11111111111111
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     217.8181818181818
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     168.74647887323943
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     197.47826086956522
+    ],
+    [
+     "2026-10-19T05:51:00+09:00",
+     220.44117647058823
+    ],
+    [
+     "2026-10-19T05:52:00+09:00",
+     202.33870967741936
+    ],
+    [
+     "2026-10-19T05:53:00+09:00",
+     209.1578947368421
+    ],
+    [
+     "2026-10-19T05:54:00+09:00",
+     200.18965517241378
+    ],
+    [
+     "2026-10-19T05:55:00+09:00",
+     204.98245614035088
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "EnvironmentConcurrentRequests",
+   "stat": "Maximum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     0
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:51:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:52:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:53:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:54:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:55:00+09:00",
+     2
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web",
+   "metric": "ResponseBytes",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     0
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     369497
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     185169
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     1117726
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     988000
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     1984151
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     2733110
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     3996372
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     6668592
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     8851356
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     11083854
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     24239945
+    ],
+    [
+     "2026-10-19T05:51:00+09:00",
+     3997639
+    ],
+    [
+     "2026-10-19T05:52:00+09:00",
+     4144116
+    ],
+    [
+     "2026-10-19T05:53:00+09:00",
+     0
+    ],
+    [
+     "2026-10-19T05:54:00+09:00",
+     0
+    ],
+    [
+     "2026-10-19T05:55:00+09:00",
+     0
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web/Usage",
+   "metric": "EndpointActiveEnvironments",
+   "stat": "Maximum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main",
+    "ExecutionRegion": "ap-northeast-1"
+   },
+   "points": [
+    [
+     "2026-10-19T05:39:00+09:00",
+     8
+    ],
+    [
+     "2026-10-19T05:40:00+09:00",
+     8
+    ],
+    [
+     "2026-10-19T05:41:00+09:00",
+     3
+    ],
+    [
+     "2026-10-19T05:42:00+09:00",
+     3
+    ],
+    [
+     "2026-10-19T05:43:00+09:00",
+     3
+    ],
+    [
+     "2026-10-19T05:44:00+09:00",
+     3
+    ],
+    [
+     "2026-10-19T05:45:00+09:00",
+     3
+    ],
+    [
+     "2026-10-19T05:46:00+09:00",
+     5
+    ],
+    [
+     "2026-10-19T05:47:00+09:00",
+     10
+    ],
+    [
+     "2026-10-19T05:48:00+09:00",
+     14
+    ],
+    [
+     "2026-10-19T05:49:00+09:00",
+     75
+    ],
+    [
+     "2026-10-19T05:50:00+09:00",
+     75
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web/Usage",
+   "metric": "EndpointRequestThrottles",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main",
+    "ExecutionRegion": "ap-northeast-1"
+   },
+   "points": []
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web/Usage",
+   "metric": "AccountRequestThrottles",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main",
+    "ExecutionRegion": "ap-northeast-1"
+   },
+   "points": []
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web/Usage",
+   "metric": "EndpointActiveEnvironmentThrottles",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main",
+    "ExecutionRegion": "ap-northeast-1"
+   },
+   "points": []
+  },
+  {
+   "label": "gekko10-web-noop",
+   "namespace": "AWS/Lambda/Web/Usage",
+   "metric": "AccountActiveVCPUArm64Throttles",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-web-noop",
+    "EndpointName": "main",
+    "ExecutionRegion": "ap-northeast-1"
+   },
+   "points": []
+  },
+  {
+   "label": "dsql:connect-attempts",
+   "namespace": "AWS/Usage",
+   "metric": "CallCount",
+   "stat": "Sum",
+   "dimensions": {
+    "Type": "API",
+    "ResourceId": "cluster/xzufgtayy7lkiiup2abhk43p7a",
+    "Resource": "DbConnectAdmin",
+    "Service": "AuroraDSQL",
+    "Class": "None"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     7
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     9
+    ]
+   ]
+  },
+  {
+   "label": "dsql:connect-attempts",
+   "namespace": "AWS/Usage",
+   "metric": "CallCount",
+   "stat": "Maximum",
+   "dimensions": {
+    "Type": "API",
+    "ResourceId": "cluster/xzufgtayy7lkiiup2abhk43p7a",
+    "Resource": "DbConnectAdmin",
+    "Service": "AuroraDSQL",
+    "Class": "None"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     2
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     2
+    ]
+   ]
+  },
+  {
+   "label": "dsql:open-connections",
+   "namespace": "AWS/Usage",
+   "metric": "ResourceCount",
+   "stat": "Maximum",
+   "dimensions": {
+    "Type": "Resource",
+    "ResourceId": "cluster/xzufgtayy7lkiiup2abhk43p7a",
+    "Resource": "ClusterConnectionCount",
+    "Service": "AuroraDSQL",
+    "Class": "None"
+   },
+   "points": [
+    [
+     "2026-10-19T05:56:00+09:00",
+     16
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     16
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "TotalDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     3.4125178749999994
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     7.502797749999997
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     12.433673999999998
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "ComputeDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     1.626346
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     1.792954
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     2.496174
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "ReadDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     1.7861718749999964
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     5.709843749999988
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     9.937500000000005
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "WriteDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     0
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     0
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     0
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "TotalTransactions",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     420
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     1509
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     2650
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "ReadOnlyTransactions",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T05:55:00+09:00",
+     420
+    ],
+    [
+     "2026-10-19T05:56:00+09:00",
+     1509
+    ],
+    [
+     "2026-10-19T05:57:00+09:00",
+     2650
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "OccConflicts",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": []
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "QueryTimeouts",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": []
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "CommitLatency",
+   "stat": "Average",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": []
+  }
+ ]
+}

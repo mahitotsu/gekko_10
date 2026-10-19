@@ -1,0 +1,164 @@
+{
+ "taskId": "2874935bcb5140a79a4ffaf6f3e79c33",
+ "startedAt": "2026-10-18T16:11:09.467Z",
+ "expectedSeconds": 20310,
+ "plan": {
+  "seed": "20261019",
+  "steps": [
+   25,
+   50,
+   100,
+   200,
+   400,
+   800,
+   1600
+  ],
+  "stepSeconds": 90,
+  "runs": [
+   {
+    "set": 1,
+    "index": 1,
+    "name": "event-noop",
+    "url": "https://readg4l3ek2okbazkl5y5gvbxm0usold.lambda-url.ap-northeast-1.on.aws",
+    "path": "/noop",
+    "waitSeconds": 60
+   },
+   {
+    "set": 1,
+    "index": 2,
+    "name": "web-dsql-each",
+    "url": "https://bl1fb6jt3ld2h3b8.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 3,
+    "name": "event-dsql-each",
+    "url": "https://2yf2ktd5tmxrxddirq4cfpp3yq0zvrex.lambda-url.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 900
+   },
+   {
+    "set": 1,
+    "index": 4,
+    "name": "event-dsql-reuse",
+    "url": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 900
+   },
+   {
+    "set": 1,
+    "index": 5,
+    "name": "web-noop",
+    "url": "https://bdzmbtr6t61tbb4d.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/noop",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 6,
+    "name": "web-dsql-pool",
+    "url": "https://3b6qy49hxzrshrjj.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 1,
+    "name": "web-dsql-each",
+    "url": "https://bl1fb6jt3ld2h3b8.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 2,
+    "name": "web-noop",
+    "url": "https://bdzmbtr6t61tbb4d.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/noop",
+    "waitSeconds": 900
+   },
+   {
+    "set": 2,
+    "index": 3,
+    "name": "event-noop",
+    "url": "https://readg4l3ek2okbazkl5y5gvbxm0usold.lambda-url.ap-northeast-1.on.aws",
+    "path": "/noop",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 4,
+    "name": "event-dsql-reuse",
+    "url": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 5,
+    "name": "event-dsql-each",
+    "url": "https://2yf2ktd5tmxrxddirq4cfpp3yq0zvrex.lambda-url.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 6,
+    "name": "web-dsql-pool",
+    "url": "https://3b6qy49hxzrshrjj.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 900
+   },
+   {
+    "set": 3,
+    "index": 1,
+    "name": "web-dsql-pool",
+    "url": "https://3b6qy49hxzrshrjj.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 2,
+    "name": "web-dsql-each",
+    "url": "https://bl1fb6jt3ld2h3b8.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 3,
+    "name": "web-noop",
+    "url": "https://bdzmbtr6t61tbb4d.g0s.lambda-web.ap-northeast-1.on.aws",
+    "path": "/noop",
+    "waitSeconds": 900
+   },
+   {
+    "set": 3,
+    "index": 4,
+    "name": "event-dsql-reuse",
+    "url": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 5,
+    "name": "event-noop",
+    "url": "https://readg4l3ek2okbazkl5y5gvbxm0usold.lambda-url.ap-northeast-1.on.aws",
+    "path": "/noop",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 6,
+    "name": "event-dsql-each",
+    "url": "https://2yf2ktd5tmxrxddirq4cfpp3yq0zvrex.lambda-url.ap-northeast-1.on.aws",
+    "path": "/db/read",
+    "waitSeconds": 300
+   }
+  ]
+ }
+}

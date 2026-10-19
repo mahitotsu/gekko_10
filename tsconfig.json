@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["src", "scripts/invoke.ts", "scripts/loadgen-lib.ts", "scripts/p1-plan.ts", "scripts/p1-runner.ts", "scripts/p1-fetch.ts", "scripts/p1-start.ts", "scripts/collect-metrics.ts", "scripts/db-setup.ts", "bin", "lib", "test"]
+  "include": ["src", "scripts/invoke.ts", "scripts/loadgen-lib.ts", "scripts/p1-plan.ts", "scripts/p1-runner.ts", "scripts/p1-fetch.ts", "scripts/analyze.ts", "scripts/p1-start.ts", "scripts/collect-metrics.ts", "scripts/db-setup.ts", "bin", "lib", "test"]
 }

@@ -4,6 +4,8 @@ import {
   countBy,
   failureKey,
   maxOf,
+  parseMix,
+  pickPath,
   quantile,
   runOpenLoop,
   summarizeStep,
@@ -154,5 +156,85 @@ describe("large runs", () => {
       send: async (_s, step) => result({ step }),
     });
     expect(seen).toEqual([0, 1]);
+  });
+});
+
+
+describe("request mix", () => {
+  it("parses weighted entries, with queries in the path", () => {
+    expect(parseMix("/app/item:70,/app/detail?n=11:15")).toEqual([
+      { path: "/app/item", weight: 70 },
+      { path: "/app/detail?n=11", weight: 15 },
+    ]);
+  });
+
+  it.each(["", "/app/item", "/app/item:0", "/app/item:x", "app/item:5", ":5"])("rejects %j", (spec) => {
+    expect(() => parseMix(spec)).toThrow();
+  });
+
+  it("picks the same endpoint for the same (seed, step, index), whatever was dropped before", () => {
+    const mix = parseMix("/a:1,/b:1,/c:1");
+    const seq = (seed: string) => Array.from({ length: 50 }, (_, i) => pickPath(mix, seed, 2, i));
+    expect(seq("s")).toEqual(seq("s"));
+    expect(seq("s")).not.toEqual(seq("t"));
+    expect(pickPath(mix, "s", 2, 7)).toBe(seq("s")[7]);
+  });
+
+  it("follows the weights", () => {
+    const mix = parseMix("/item:70,/detail:15,/report:5,/render:5,/write:5");
+    const n = 20_000;
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < n; i++) {
+      const p = pickPath(mix, "w", 0, i);
+      counts[p] = (counts[p] ?? 0) + 1;
+    }
+    expect(counts["/item"] / n).toBeCloseTo(0.7, 1);
+    expect(counts["/detail"] / n).toBeCloseTo(0.15, 1);
+    for (const p of ["/report", "/render", "/write"]) expect(counts[p] / n).toBeCloseTo(0.05, 1);
+  });
+});
+
+describe("app timing and per-endpoint summaries", () => {
+  const withApp = (path: string, ms: number, appMs: number, over: Record<string, unknown> = {}) =>
+    result({ path, ms, fromScheduleMs: ms + 1, body: { envId: "a", build: "abc", appMs, db: { newConnection: false, acquireMs: 1, queryMs: 3, releaseMs: 0.5, queries: 2, ...over } } });
+
+  it("splits the client's time into outside, app and DB, request by request", () => {
+    const rs = [withApp("/x", 20, 8), withApp("/x", 30, 10), withApp("/x", 40, 12)];
+    const s = summarizeStep(0, 10, 1, rs, { scheduled: 3, sent: 3, dropped: 0 });
+    expect(s.app?.appMs.p50).toBe(10);
+    expect(s.app?.outsideMs.p50).toBe(20);
+    expect(s.app?.appOtherMs.p50).toBe(10 - 4.5);
+    expect(s.app?.inconsistent).toBe(0);
+    expect(s.app?.count).toBe(3);
+  });
+
+  it("counts responses whose app time exceeds the client's time", () => {
+    const s = summarizeStep(0, 10, 1, [withApp("/x", 5, 9), withApp("/x", 20, 8)], { scheduled: 2, sent: 2, dropped: 0 });
+    expect(s.app?.inconsistent).toBe(1);
+  });
+
+  it("has no breakdown when the responses carry no appMs", () => {
+    expect(summarizeStep(0, 10, 1, [result()], { scheduled: 1, sent: 1, dropped: 0 }).app).toBeUndefined();
+  });
+
+  it("reports the builds seen and the pool's waiting peak", () => {
+    const rs = [withApp("/x", 20, 8, { pool: { total: 10, idle: 0, waiting: 4 } }), withApp("/x", 20, 8, { pool: { total: 7, idle: 1, waiting: 0 } })];
+    rs[1].body!.build = "def";
+    const s = summarizeStep(0, 10, 1, rs, { scheduled: 2, sent: 2, dropped: 0 });
+    expect(s.builds).toEqual(["abc", "def"]);
+    expect(s.db?.poolWaitingMax).toBe(4);
+    expect(s.db?.poolTotalMax).toBe(10);
+    expect(s.db?.queriesPerRequest).toBe(2);
+  });
+
+  it("summarises each endpoint separately when more than one was used", () => {
+    const rs = [withApp("/a", 10, 5), withApp("/a", 12, 5), withApp("/b", 100, 90), result({ path: "/b", status: 503, body: { code: "53400", phase: "connect" } })];
+    const s = summarizeStep(0, 10, 1, rs, { scheduled: 4, sent: 4, dropped: 0 });
+    expect(Object.keys(s.byPath!)).toEqual(["/a", "/b"]);
+    expect(s.byPath!["/a"].ok).toBe(2);
+    expect(s.byPath!["/b"].ok).toBe(1);
+    expect(s.byPath!["/b"].failures).toEqual({ "503 db:53400/connect": 1 });
+    expect(s.byPath!["/b"].serviceMs.p50).toBe(100);
+    expect(summarizeStep(0, 10, 1, [withApp("/a", 10, 5)], { scheduled: 1, sent: 1, dropped: 0 }).byPath).toBeUndefined();
   });
 });

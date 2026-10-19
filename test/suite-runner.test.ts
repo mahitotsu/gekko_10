@@ -2,18 +2,17 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildPlan, runSeconds } from "../scripts/p1-plan.js";
-import { CHILD_MARGIN_SECONDS, createRunChild, parsePlan, runPlan, type RunnerDeps } from "../scripts/p1-runner.js";
+import { buildPlan, invokeArgs, runDuration, type CaseDef } from "../scripts/suite-plan.js";
+import { CHILD_MARGIN_SECONDS, createRunChild, parsePlan, runPlan, type RunnerDeps, type RunRecord } from "../scripts/suite-runner.js";
 
 const urls = {
   "event-noop": "https://a.example/",
-  "event-dsql-each": "https://b.example/",
-  "event-dsql-reuse": "https://c.example/",
   "web-noop": "https://d.example/",
   "web-dsql-each": "https://e.example/",
-  "web-dsql-pool": "https://f.example/",
 };
-const plan = buildPlan({ sets: [1], seed: "t", urls, only: ["event-noop", "web-noop", "web-dsql-each"], steps: [10, 20], stepSeconds: 5, firstWait: 7 });
+const cases: CaseDef[] = [{ id: "T", path: "/noop", configs: ["event-noop", "web-noop", "web-dsql-each"], steps: [10, 20], stepSeconds: 5 }];
+const plan = buildPlan({ protocol: "t", sets: [1], seed: "t", build: "b1", urls, cases, firstWait: 7 });
+const withPost = { ...plan, post: { clusterId: "c", metricsLagSeconds: 180 } };
 
 function fakeDeps(over: Partial<RunnerDeps> = {}) {
   const lines: string[] = [];
@@ -26,11 +25,11 @@ function fakeDeps(over: Partial<RunnerDeps> = {}) {
     sleep: async (ms) => {
       sleeps.push(ms);
     },
-    runChild: async (run, _plan, onLine, timeoutMs) => {
+    runChild: async (run, p, onLine, timeoutMs) => {
       started.push(run.name);
       timeouts.push(timeoutMs);
       onLine(`STEP_JSON {"step":0,"run":"${run.name}"}`);
-      onLine(`RESULT_JSON {"target":"${run.url}${run.path}"}`);
+      onLine(`RESULT_JSON {"target":"${p.urls[run.name]}"}`);
       return { exitCode: 0, timedOut: false, aborted: false };
     },
     ...over,
@@ -39,23 +38,26 @@ function fakeDeps(over: Partial<RunnerDeps> = {}) {
 }
 
 describe("runPlan", () => {
-  it("waits, marks the beginning and end of each run, forwards the child's lines in between, and finishes with P1_DONE", async () => {
+  it("waits, marks the beginning and end of each run, forwards the child's lines in between, and finishes with SUITE_DONE", async () => {
     const { deps, lines, sleeps } = fakeDeps();
     const out = await runPlan(plan, deps, new AbortController().signal);
     expect(out).toEqual({ status: "done", completed: 3 });
     expect(sleeps).toEqual(plan.runs.map((r) => r.waitSeconds * 1000));
     const kinds = lines.map((l) => l.split(" ")[0]);
-    expect(kinds[0]).toBe("P1_PLAN");
-    expect(kinds.slice(1, 6)).toEqual(["P1_WAIT", "P1_RUN_BEGIN", "STEP_JSON", "RESULT_JSON", "P1_RUN_END"]);
-    expect(kinds.at(-1)).toBe("P1_DONE");
-    const begin = JSON.parse(lines.find((l) => l.startsWith("P1_RUN_BEGIN"))!.slice("P1_RUN_BEGIN ".length));
-    expect(begin).toMatchObject({ set: 1, index: 1, name: plan.runs[0].name, startedAt: "2026-10-19T00:00:00.000Z" });
+    expect(kinds[0]).toBe("SUITE_PLAN");
+    expect(kinds.slice(1, 6)).toEqual(["SUITE_WAIT", "SUITE_RUN_BEGIN", "STEP_JSON", "RESULT_JSON", "SUITE_RUN_END"]);
+    expect(kinds.at(-1)).toBe("SUITE_DONE");
+    const begin = JSON.parse(lines.find((l) => l.startsWith("SUITE_RUN_BEGIN"))!.slice("SUITE_RUN_BEGIN ".length));
+    expect(begin).toMatchObject({ set: 1, index: 1, case: "T", name: plan.runs[0].name, startedAt: "2026-10-19T00:00:00.000Z" });
+    const planLine = JSON.parse(lines[0].slice("SUITE_PLAN ".length));
+    expect(planLine.plan).toEqual(plan);
+    expect(planLine.startedAt).toBe("2026-10-19T00:00:00.000Z");
   });
 
   it("gives each child its steps plus the margin as a deadline", async () => {
     const { deps, timeouts } = fakeDeps();
     await runPlan(plan, deps, new AbortController().signal);
-    expect(new Set(timeouts)).toEqual(new Set([(runSeconds(plan) + CHILD_MARGIN_SECONDS) * 1000]));
+    expect(new Set(timeouts)).toEqual(new Set([(runDuration(plan, plan.runs[0]) + CHILD_MARGIN_SECONDS) * 1000]));
   });
 
   it("goes on with the next run after a failed or timed-out run", async () => {
@@ -71,11 +73,11 @@ describe("runPlan", () => {
     const out = await runPlan(plan, deps, new AbortController().signal);
     expect(out).toEqual({ status: "done", completed: 3 });
     expect(started).toHaveLength(3);
-    const ends = lines.filter((l) => l.startsWith("P1_RUN_END")).map((l) => JSON.parse(l.slice("P1_RUN_END ".length)));
+    const ends = lines.filter((l) => l.startsWith("SUITE_RUN_END")).map((l) => JSON.parse(l.slice("SUITE_RUN_END ".length)));
     expect(ends.map((e) => [e.exitCode, e.timedOut])).toEqual([[1, false], [null, true], [0, false]]);
   });
 
-  it("stops, reports P1_ABORTED with the reason, and starts nothing more when aborted during a run", async () => {
+  it("stops, reports SUITE_ABORTED with the reason, and starts nothing more when aborted during a run", async () => {
     const controller = new AbortController();
     const { deps, lines, started } = fakeDeps({
       runChild: async (run) => {
@@ -87,7 +89,7 @@ describe("runPlan", () => {
     const out = await runPlan(plan, deps, controller.signal);
     expect(out).toEqual({ status: "aborted", completed: 1 });
     expect(started).toHaveLength(1);
-    expect(lines.at(-1)).toBe('P1_ABORTED {"reason":"SIGTERM","completed":1,"of":3}');
+    expect(lines.at(-1)).toBe('SUITE_ABORTED {"reason":"SIGTERM","completed":1,"of":3}');
   });
 
   it("does not start a run when aborted while waiting", async () => {
@@ -100,8 +102,8 @@ describe("runPlan", () => {
     const out = await runPlan(plan, deps, controller.signal);
     expect(out).toEqual({ status: "aborted", completed: 0 });
     expect(started).toEqual([]);
-    expect(lines.some((l) => l.startsWith("P1_RUN_BEGIN"))).toBe(false);
-    expect(lines.at(-1)).toContain("P1_ABORTED");
+    expect(lines.some((l) => l.startsWith("SUITE_RUN_BEGIN"))).toBe(false);
+    expect(lines.at(-1)).toContain("SUITE_ABORTED");
   });
 });
 
@@ -119,7 +121,8 @@ describe("createRunChild (real child processes)", () => {
     const lines: string[] = [];
     const out = await createRunChild(file)(run, plan, (l) => lines.push(l), 10_000, new AbortController().signal);
     expect(out).toEqual({ exitCode: 3, timedOut: false, aborted: false });
-    expect(lines).toContain(`args ${run.url} --path ${run.path} --steps 10,20 --step-seconds 5`);
+    expect(lines).toContain(`args ${invokeArgs(plan, run).join(" ")}`);
+    expect(invokeArgs(plan, run).join(" ")).toContain("--path /noop --steps 10,20 --step-seconds 5");
     expect(lines).toContain("to stderr");
   });
 
@@ -149,5 +152,59 @@ describe("parsePlan", () => {
     expect(parsePlan(JSON.stringify(plan))).toEqual(plan);
     expect(parsePlan(`@${file}`)).toEqual(plan);
     expect(() => parsePlan('{"runs":[]}')).toThrow(/invalid plan/);
+    expect(() => parsePlan(JSON.stringify({ ...plan, urls: {} }))).toThrow(/no case, steps or url/);
+  });
+});
+
+
+describe("post-processing", () => {
+  const postDeps = (calls: unknown[][], over: Partial<RunnerDeps> = {}) =>
+    fakeDeps({
+      post: async (p, records, startedAt) => {
+        calls.push([p, records, startedAt]);
+      },
+      ...over,
+    });
+
+  it("runs after the last run with every run's record and output, then SUITE_DONE", async () => {
+    const calls: unknown[][] = [];
+    const { deps, lines } = postDeps(calls);
+    await runPlan(withPost, deps, new AbortController().signal);
+    expect(calls).toHaveLength(1);
+    const [p, records, startedAt] = calls[0] as [typeof withPost, RunRecord[], string];
+    expect(p).toBe(withPost);
+    expect(startedAt).toBe("2026-10-19T00:00:00.000Z");
+    expect(records.map((r) => r.run.name)).toEqual(withPost.runs.map((r) => r.name));
+    expect(records[0].lines).toEqual(['STEP_JSON {"step":0,"run":"' + records[0].run.name + '"}', expect.stringContaining("RESULT_JSON")]);
+    expect(records[0].result).toEqual({ exitCode: 0, timedOut: false, aborted: false });
+    const kinds = lines.map((l) => l.split(" ")[0]);
+    expect(kinds.slice(-3)).toEqual(["SUITE_POST_BEGIN", "SUITE_POST_END", "SUITE_DONE"]);
+  });
+
+  it("does not run without a post configuration, and not when aborted", async () => {
+    const calls: unknown[][] = [];
+    await runPlan(plan, postDeps(calls).deps, new AbortController().signal);
+    expect(calls).toHaveLength(0);
+    const controller = new AbortController();
+    const aborted = postDeps(calls, {
+      runChild: async () => {
+        controller.abort("SIGTERM");
+        return { exitCode: null, timedOut: false, aborted: true };
+      },
+    });
+    await runPlan(withPost, aborted.deps, controller.signal);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("reports a failing post-processing and still finishes", async () => {
+    const { deps, lines } = fakeDeps({
+      post: async () => {
+        throw new Error("insights timed out");
+      },
+    });
+    const out = await runPlan(withPost, deps, new AbortController().signal);
+    expect(out.status).toBe("done");
+    expect(lines.find((l) => l.startsWith("SUITE_POST_FAILED"))).toBe('SUITE_POST_FAILED {"message":"insights timed out"}');
+    expect(lines.at(-1)).toBe('SUITE_DONE {"completed":3}');
   });
 });

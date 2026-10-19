@@ -30,6 +30,10 @@ export interface DbTrace {
   /** Time until a connection was ready: connect (each), connect or 0 (reuse), pool.connect() (pool). */
   acquireMs: number;
   queryMs: number;
+  /** Statements run on behalf of one request. Set when traces of several runs are merged (src/scenarios.ts). */
+  queries?: number;
+  /** Longest single statement, same condition as `queries`. */
+  queryMaxMs?: number;
   /** end() for each, release() for pool, 0 for reuse. */
   releaseMs: number;
   connectionAgeMs?: number;

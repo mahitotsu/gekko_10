@@ -7,9 +7,9 @@ AWS Lambda の **Web Functions** と **Event Functions（関数URL）** を、**
 同じ [Hono](https://hono.dev/) アプリを両方の形態で動かし、DSQL への接続の持ち方（毎回接続 / 再利用 / プール共有）を変えて測ります。リージョンは ap-northeast-1（東京）、IaC は AWS CDK（TypeScript）です。
 
 ## 現在の状況
-- 完了: DB なしの関数、DSQL クラスタ、DSQL につなぐ 4 つの関数、負荷生成の仕組み（東京の Fargate タスク）。
-- 次: P2〜P4 の負荷試験。P1（段階的な定常負荷）の結果は [docs/report.md](docs/report.md) にあります。
-- 検証の途中です。P1 の結論は出ましたが、P2〜P4 は未実施です。設計は [docs/plan.md](docs/plan.md) にあります。
+- 完了: DB なしの関数、DSQL クラスタ、DSQL につなぐ関数、アプリの形のエンドポイント（`/app/*`）、負荷生成の仕組み（東京の Fargate タスク）、測定の定義と、収集・分析までタスクの中で進める進行役。
+- 次: 較正（デプロイ後）→ 測定（外部 I/O を挟む API、混在した API、急なスパイク、重い集計）。設計は [docs/plan.md](docs/plan.md) §8。
+- 検証の途中です。最初の予備測定（固定の短いクエリ）の結果は [docs/report.md](docs/report.md) にありますが、競合が起きない条件だったので、測定の定義を作り直しました。結論はまだ出ていません。
 
 ## 比較する関数
 | 関数 | 形態 | DB の接続 |
@@ -54,11 +54,12 @@ npm run invoke -- <URL> --path /db/read --count 20 --concurrency 4
 npx cdk deploy Gekko10LoadStack   # 初回のみ
 scripts/load-run.sh -- <URL> --path /db/read --duration 300 --concurrency 100
 ```
-数時間かかる負荷試験は、1 つの Fargate タスクが最後まで実行するので、**PC がスリープしても、AWS の認証が切れても止まりません**。
+数時間かかる測定は、1 つの Fargate タスクが最後まで実行する（待ち、負荷、メトリクスの収集、分析、合否の判定まで）ので、**PC がスリープしても、AWS の認証が切れても止まりません**。
 ```sh
-npm run p1-start -- --sets 1,2 --seed 20261019 --dry-run   # 計画・終了の目安・費用の確認
-npm run p1-start -- --sets 1,2 --seed 20261019             # 起動
-npm run p1-fetch -- --task <タスク ID> --wait              # 後日、回収（ログは 30 日、メトリクスは約 15 日以内に）
+npm run suite-start -- --suite measurement --seed 20261020 --dry-run   # 計画・終了の目安・費用の確認
+npm run suite-start -- --suite measurement --seed 20261020             # 起動（作業ツリーがクリーンで、デプロイ済みであること）
+npm run suite-fetch -- --task <タスク ID> --wait                       # 後日、回収（ログは 30 日）
+npm run analyze -- results/<日付>                                      # 手元で同じ結果を再現
 ```
 **負荷をかけると Lambda・DSQL・Fargate の料金が発生します。** 実行前に規模と費用を見積もってください。
 
@@ -78,7 +79,7 @@ npx cdk destroy Gekko10DbStack                                       # 最後に
 |---|---|
 | [docs/plan.md](docs/plan.md) | 目的、仮説、比較する構成、負荷パターン、計測項目、コストの計算、段階 |
 | [docs/architecture.md](docs/architecture.md) | 構成、エンドポイントの仕様、設計の判断、運用の手順 |
-| [docs/report.md](docs/report.md) | P1 の結果（結論と根拠） |
+| [docs/report.md](docs/report.md) | 予備測定（v1）の結果。測定のあとに書き直す |
 | [docs/findings.md](docs/findings.md) | 実機で確かめた事実（結論と根拠）、未確認の一覧 |
 | [docs/web-functions-notes.md](docs/web-functions-notes.md) | Web Functions の仕様の調査メモ（出典つき） |
 | [CLAUDE.md](CLAUDE.md) | AI（Claude Code）向けの作業の約束事 |

@@ -1,11 +1,14 @@
 // Creates the items table and loads DB_ROWS rows, as the DSQL admin role, using the same connector as the app.
-// Usage: npm run db-setup -- <cluster-endpoint>      (idempotent; uses the default AWS credentials)
+// Also creates the events table that /app/write and /app/external insert into.
+// Usage: npm run db-setup -- <cluster-endpoint>                  (idempotent; uses the default AWS credentials)
+//        npm run db-setup -- <cluster-endpoint> --reset-events   (deletes the rows the measurements inserted, 3,000 per transaction)
 import { AuroraDSQLClient } from "@aws/aurora-dsql-node-postgres-connector";
 import { DB_ROWS } from "../src/db.js";
 
 const host = process.argv[2];
+const resetEvents = process.argv.includes("--reset-events");
 if (!host) {
-  console.error("usage: db-setup <cluster-endpoint>");
+  console.error("usage: db-setup <cluster-endpoint> [--reset-events]");
   process.exit(2);
 }
 
@@ -14,6 +17,17 @@ await client.connect();
 try {
   // DSQL does not allow DDL and DML in the same transaction, so each statement runs on its own.
   await client.query("CREATE TABLE IF NOT EXISTS items (id integer PRIMARY KEY, payload text NOT NULL)");
+  await client.query("CREATE TABLE IF NOT EXISTS events (id uuid PRIMARY KEY, item_id integer NOT NULL)");
+  if (resetEvents) {
+    // The per-transaction limit is 3,000 rows, so delete in batches until nothing is left.
+    let total = 0;
+    for (;;) {
+      const { rowCount } = await client.query("DELETE FROM events WHERE id IN (SELECT id FROM events LIMIT 3000)");
+      if (!rowCount) break;
+      total += rowCount;
+    }
+    console.log(`events: deleted ${total} rows`);
+  }
   // 1,000 rows of about 100 bytes; the per-transaction limit is 3,000 rows.
   // Rows are built here (about 100 bytes each) and sent as one multi-row INSERT, so the SQL stays plain.
   const ids = Array.from({ length: DB_ROWS }, (_, i) => i + 1);

@@ -1,5 +1,4 @@
 node_modules
 dist
 cdk.out
-load/invoke.mjs
-load/p1-runner.mjs
+load/*.mjs

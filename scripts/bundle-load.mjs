@@ -1,9 +1,9 @@
 import { build } from "esbuild";
 
 // The load generator image carries two scripts, each as a single ESM file: scripts/invoke.ts (one load run) and
-// scripts/p1-runner.ts (a whole P1 plan inside one task). Kept apart from bundle.mjs, whose Lambda bundles must share
+// scripts/suite-runner.ts (a whole suite inside one task: the runs, then the collection of metrics and the analysis). Kept apart from bundle.mjs, whose Lambda bundles must share
 // identical settings for a fair comparison.
-for (const name of ["invoke", "p1-runner"]) {
+for (const name of ["invoke", "suite-runner"]) {
   await build({
     entryPoints: [`scripts/${name}.ts`],
     outfile: `load/${name}.mjs`,

@@ -1,8 +1,12 @@
 // Pure helpers for scripts/invoke.ts: summaries and the open-loop (constant arrival rate) dispatcher.
 // Kept apart from invoke.ts so they can be unit-tested; invoke.ts runs on import.
 
+import { prng } from "./prng.js";
+
 export interface Result {
   status: number;
+  /** The endpoint this request went to (set when a request mix is used). */
+  path?: string;
   /** Time from sending the request to reading the response. */
   ms: number;
   body: Record<string, unknown> | null;
@@ -19,6 +23,39 @@ export interface Result {
 }
 
 export type Quantiles = { p50?: number; p95?: number; p99?: number };
+
+// ---- request mix ----
+export interface MixEntry {
+  path: string;
+  weight: number;
+}
+
+/** Parses "/app/item:70,/app/detail?n=11:15": comma-separated entries, each a path (with optional query) and a weight after the last colon. */
+export function parseMix(spec: string): MixEntry[] {
+  const entries = spec.split(",").map((part) => {
+    const i = part.lastIndexOf(":");
+    const weight = Number(part.slice(i + 1));
+    const path = part.slice(0, i);
+    if (i <= 0 || !path.startsWith("/") || !Number.isFinite(weight) || weight <= 0) throw new Error(`invalid mix entry: "${part}" (expected /path:weight)`);
+    return { path, weight };
+  });
+  if (entries.length === 0) throw new Error("empty mix");
+  return entries;
+}
+
+/**
+ * The endpoint of request `index` in step `step`. It depends only on (seed, step, index), so the sequence is the same on every
+ * run and does not shift when an earlier request is dropped.
+ */
+export function pickPath(mix: MixEntry[], seed: string, step: number, index: number): string {
+  const total = mix.reduce((n, m) => n + m.weight, 0);
+  let x = prng(`${seed}:${step}:${index}`)() * total;
+  for (const m of mix) {
+    x -= m.weight;
+    if (x < 0) return m.path;
+  }
+  return mix[mix.length - 1].path;
+}
 
 export function quantile(xs: number[], p: number): number | undefined {
   if (xs.length === 0) return undefined;
@@ -50,7 +87,14 @@ export function countBy(rs: Result[]): Record<string, number> {
   return m;
 }
 
-type DbInfo = { newConnection?: boolean; acquireMs?: number; queryMs?: number };
+type DbInfo = {
+  newConnection?: boolean;
+  acquireMs?: number;
+  queryMs?: number;
+  releaseMs?: number;
+  queries?: number;
+  pool?: { total?: number; waiting?: number };
+};
 const dbOf = (r: Result) => (r.body?.db ?? null) as DbInfo | null;
 const numbers = (xs: (number | undefined)[]) => xs.filter((x): x is number => typeof x === "number");
 /**
@@ -70,31 +114,104 @@ export interface StepCounts {
   dropped: number;
 }
 
-export interface StepSummary extends StepCounts {
+/** Where the time of a request went, from the app's own timing (response field `appMs`) against the client's. */
+export interface AppBreakdown {
+  /** Handler time inside the app. */
+  appMs: Quantiles;
+  /** Client time minus handler time: network, the platform's front end and invocation, the adapter. Per request, so the quantiles are exact. */
+  outsideMs: Quantiles;
+  /** Handler time minus the DB time (acquire + query + release): CPU work, waits, serialization. */
+  appOtherMs: Quantiles;
+  /** Responses whose handler time exceeds the client's time (they should not exist; > 0.1% fails the acceptance check). */
+  inconsistent: number;
+  /** Responses that carried an `appMs`. */
+  count: number;
+}
+
+export interface GroupSummary {
+  completed: number;
+  ok: number;
+  failures: Record<string, number>;
+  latencyMs: Quantiles;
+  serviceMs: Quantiles;
+  db?: {
+    newConnectionPct: number;
+    acquireMs: Quantiles;
+    queryMs: Quantiles;
+    queriesPerRequest: number;
+    /** Largest number of requests waiting for a pooled connection that any response reported (pool mode only). */
+    poolWaitingMax?: number;
+    poolTotalMax?: number;
+  };
+  app?: AppBreakdown;
+}
+
+export interface StepSummary extends StepCounts, GroupSummary {
   step: number;
   rate: number;
   seconds: number;
-  completed: number;
-  ok: number;
-  /** Non-200 responses and client-side failures, by label. */
-  failures: Record<string, number>;
   achievedRps: number;
   /** Share of sent requests dispatched more than LATE_MS after their scheduled time. */
   lateRate: number;
   lateP95Ms?: number;
-  /** Latency of 200 responses measured from the scheduled send time. */
-  latencyMs: Quantiles;
-  /** Latency of 200 responses measured from the actual send (server-side view plus network). */
-  serviceMs: Quantiles;
-  db?: { newConnectionPct: number; acquireMs: Quantiles; queryMs: Quantiles };
   environments: number;
   coldStarts: number;
   /** Highest in-flight count any environment reported in this step. */
   peakInFlight: number;
   loadgenCores?: number;
+  /** Distinct `build` values the responses carried (should be exactly one, the one the plan expects). */
+  builds: string[];
+  /** The same summary per endpoint, when a request mix is used. */
+  byPath?: Record<string, GroupSummary>;
 }
 
 export const LATE_MS = 100;
+
+const bodyNumber = (r: Result, key: string): number | undefined => {
+  const v = r.body?.[key];
+  return typeof v === "number" ? v : undefined;
+};
+
+function breakdown(ok: Result[]): AppBreakdown | undefined {
+  const withApp = ok.filter((r) => bodyNumber(r, "appMs") !== undefined);
+  if (withApp.length === 0) return undefined;
+  const dbMs = (r: Result) => {
+    const d = dbOf(r);
+    return (d?.acquireMs ?? 0) + (d?.queryMs ?? 0) + (d?.releaseMs ?? 0);
+  };
+  return {
+    appMs: roundQ(quantiles(withApp.map((r) => bodyNumber(r, "appMs")!))),
+    outsideMs: roundQ(quantiles(withApp.map((r) => r.ms - bodyNumber(r, "appMs")!))),
+    appOtherMs: roundQ(quantiles(withApp.map((r) => bodyNumber(r, "appMs")! - dbMs(r)))),
+    inconsistent: withApp.filter((r) => bodyNumber(r, "appMs")! > r.ms).length,
+    count: withApp.length,
+  };
+}
+
+/** The part of a summary that does not depend on the step: outcomes, latency, DB and app timing of one group of results. */
+export function summarizeGroup(results: Result[]): GroupSummary {
+  const ok = results.filter((r) => r.status === 200);
+  const failed = results.filter((r) => r.status !== 200);
+  const dbs = ok.map(dbOf).filter((d): d is DbInfo => d !== null);
+  const pools = dbs.map((d) => d.pool).filter((p): p is NonNullable<DbInfo["pool"]> => p !== undefined);
+  return {
+    completed: results.length,
+    ok: ok.length,
+    failures: countBy(failed),
+    latencyMs: roundQ(quantiles(numbers(ok.map((r) => r.fromScheduleMs ?? r.ms)))),
+    serviceMs: roundQ(quantiles(ok.map((r) => r.ms))),
+    db: dbs.length
+      ? {
+          newConnectionPct: round((100 * dbs.filter((d) => d.newConnection).length) / dbs.length, 1)!,
+          acquireMs: roundQ(quantiles(numbers(dbs.map((d) => d.acquireMs)))),
+          queryMs: roundQ(quantiles(numbers(dbs.map((d) => d.queryMs)))),
+          queriesPerRequest: round(numbers(dbs.map((d) => d.queries ?? 1)).reduce((n, x) => n + x, 0) / dbs.length, 2)!,
+          ...(pools.length ? { poolWaitingMax: maxOf(numbers(pools.map((p) => p.waiting))), poolTotalMax: maxOf(numbers(pools.map((p) => p.total))) } : {}),
+        }
+      : undefined,
+    app: breakdown(ok),
+  };
+}
 
 export function summarizeStep(
   step: number,
@@ -105,33 +222,23 @@ export function summarizeStep(
   loadgenCores?: number,
 ): StepSummary {
   const ok = results.filter((r) => r.status === 200);
-  const failed = results.filter((r) => r.status !== 200);
-  const dbs = ok.map(dbOf).filter((d): d is DbInfo => d !== null);
   const late = results.filter((r) => (r.lateMs ?? 0) > LATE_MS).length;
+  const paths = [...new Set(results.map((r) => r.path).filter((p): p is string => p !== undefined))].sort();
   return {
     step,
     rate,
     seconds,
     ...counts,
-    completed: results.length,
-    ok: ok.length,
-    failures: countBy(failed),
+    ...summarizeGroup(results),
     achievedRps: round(ok.length / seconds, 1)!,
     lateRate: counts.sent ? Number((late / counts.sent).toFixed(4)) : 0,
     lateP95Ms: round(quantile(numbers(results.map((r) => r.lateMs)), 95)),
-    latencyMs: roundQ(quantiles(numbers(ok.map((r) => r.fromScheduleMs ?? r.ms)))),
-    serviceMs: roundQ(quantiles(ok.map((r) => r.ms))),
-    db: dbs.length
-      ? {
-          newConnectionPct: round((100 * dbs.filter((d) => d.newConnection).length) / dbs.length, 1)!,
-          acquireMs: roundQ(quantiles(numbers(dbs.map((d) => d.acquireMs)))),
-          queryMs: roundQ(quantiles(numbers(dbs.map((d) => d.queryMs)))),
-        }
-      : undefined,
     environments: new Set(ok.map((r) => r.body?.envId)).size,
     coldStarts: ok.filter((r) => r.body?.coldStart).length,
     peakInFlight: maxOf(ok.map((r) => Number(r.body?.inFlight ?? 0))),
     loadgenCores: round(loadgenCores, 2),
+    builds: [...new Set(ok.map((r) => r.body?.build).filter((b): b is string => typeof b === "string"))].sort(),
+    ...(paths.length > 1 ? { byPath: Object.fromEntries(paths.map((p) => [p, summarizeGroup(results.filter((r) => r.path === p))])) } : {}),
   };
 }
 
@@ -143,8 +250,8 @@ export interface OpenLoopOptions {
   maxInflight: number;
   /** Stop after a step whose failure share reaches this (0..1). Needs at least MIN_SAMPLES_FOR_STOP requests in the step. */
   stopOnErrorRate?: number;
-  /** Sends one request that was scheduled at `scheduledAt` (performance.now() scale). */
-  send: (scheduledAt: number, step: number) => Promise<Result>;
+  /** Sends request number `index` of `step`, scheduled at `scheduledAt` (performance.now() scale). */
+  send: (scheduledAt: number, step: number, index: number) => Promise<Result>;
   /** CPU time used by this process so far, in seconds (user + system). */
   cpuSeconds?: () => number;
   drainTimeoutMs?: number;
@@ -189,7 +296,8 @@ export async function runOpenLoop(opts: OpenLoopOptions): Promise<OpenLoopOutcom
       // Number of requests whose scheduled time has arrived (request 0 is due at the step start).
       const due = Math.min(total, Math.floor(((performance.now() - stepStart) / 1000) * rate) + 1);
       while (dispatched < due) {
-        const scheduledAt = stepStart + (dispatched * 1000) / rate;
+        const index = dispatched;
+        const scheduledAt = stepStart + (index * 1000) / rate;
         dispatched += 1;
         if (inflight >= opts.maxInflight) {
           counts.dropped += 1;
@@ -198,7 +306,7 @@ export async function runOpenLoop(opts: OpenLoopOptions): Promise<OpenLoopOutcom
         inflight += 1;
         counts.sent += 1;
         const p = opts
-          .send(scheduledAt, step)
+          .send(scheduledAt, step, index)
           .then((r) => {
             results.push(r);
           })

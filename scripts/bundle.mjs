@@ -1,5 +1,11 @@
 import { writeFile } from "node:fs/promises";
 import { build } from "esbuild";
+import { buildId as computeBuildId } from "./build-id.mjs";
+
+// The build id travels in every response, so a result file proves which code answered (scripts/build-id.mjs). Uncommitted changes
+// make it "<sha>-dirty", which suite-start refuses to measure. (The bundle itself is not refused: `cdk synth` and local runs bundle
+// while the tree is being edited.)
+const buildId = computeBuildId();
 
 // Both runtimes are built with identical settings so the comparison is fair.
 const common = {
@@ -10,6 +16,7 @@ const common = {
   minify: false,
   sourcemap: false,
   logLevel: "warning",
+  define: { __BUILD_ID__: JSON.stringify(buildId) },
 };
 
 await build({ ...common, entryPoints: ["src/entry-web.ts"], external: ["pg-native"], outfile: "dist/web/index.js" });

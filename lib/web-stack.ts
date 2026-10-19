@@ -14,10 +14,13 @@ const MAX_CONCURRENCY = 64;
  * One entry per measured Web configuration. Each is its own Web Function: the metrics have no revision dimension and
  * the learned concurrency limit is kept per function, so configurations must not share one.
  */
-const WEB_CONFIGS: { id: string; name: string; dbMode?: "each" | "pool" }[] = [
+const WEB_CONFIGS: { id: string; name: string; dbMode?: "each" | "pool"; poolMax?: number }[] = [
   { id: "WebNoop", name: "gekko10-web-noop" },
   { id: "WebDsqlEach", name: "gekko10-web-dsql-each", dbMode: "each" },
+  // The pool as large as the per-environment concurrency (64): it never has to wait.
   { id: "WebDsqlPool", name: "gekko10-web-dsql-pool", dbMode: "pool" },
+  // A pool of 10: the node-postgres default and the low end of AWS's 10-20 per application instance (docs/plan.md §8).
+  { id: "WebDsqlPool10", name: "gekko10-web-dsql-pool10", dbMode: "pool", poolMax: 10 },
 ];
 
 /**
@@ -39,7 +42,7 @@ export class Gekko10WebStack extends Stack {
           ? {
               DB_MODE: c.dbMode,
               DSQL_ENDPOINT: props.dsql.endpoint,
-              ...(c.dbMode === "pool" ? { DB_POOL_MAX: String(MAX_CONCURRENCY) } : {}),
+              ...(c.dbMode === "pool" ? { DB_POOL_MAX: String(c.poolMax ?? MAX_CONCURRENCY) } : {}),
             }
           : undefined,
       });

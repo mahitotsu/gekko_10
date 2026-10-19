@@ -16,7 +16,7 @@ import { SignatureV4 } from "@smithy/signature-v4";
 import os from "node:os";
 import { parseArgs } from "node:util";
 import { Agent, fetch as undiciFetch } from "undici";
-import { countBy, maxOf, quantile, runOpenLoop, type Result } from "./loadgen-lib.js";
+import { countBy, maxOf, parseMix, pickPath, quantile, runOpenLoop, type Result } from "./loadgen-lib.js";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -32,6 +32,8 @@ const { values, positionals } = parseArgs({
     "max-inflight": { type: "string", default: "2000" },
     "max-connections": { type: "string", default: "256" },
     "stop-on-error-rate": { type: "string" },
+    mix: { type: "string" },
+    "mix-seed": { type: "string", default: "mix" },
   },
 });
 
@@ -50,6 +52,8 @@ const duration = values.duration ? Number(values.duration) : undefined;
 const count = duration ? Number.POSITIVE_INFINITY : Number(values.count);
 const concurrency = Number(values.concurrency);
 const url = new URL(values.path!, base);
+// --mix "/app/item:70,/app/detail:15,...": each request goes to an endpoint drawn from the weights (open loop only).
+const mix = values.mix ? parseMix(values.mix) : undefined;
 
 // Function URLs and Web Function endpoints both sign with the service name "lambda".
 const signer = new SignatureV4({
@@ -76,17 +80,17 @@ const elapsedSec = () => (performance.now() - runStart) / 1000;
 
 // In the open loop, failures are counted by type and not printed one by one: a rate-limited run can fail hundreds
 // of thousands of requests.
-async function once(quiet: boolean): Promise<Result> {
+async function once(quiet: boolean, target: URL = url): Promise<Result> {
   const query: Record<string, string> = {};
-  url.searchParams.forEach((v, k) => (query[k] = v));
+  target.searchParams.forEach((v, k) => (query[k] = v));
   const signed = await signer.sign({
     method: "GET",
-    protocol: url.protocol,
-    hostname: url.hostname,
-    path: url.pathname,
+    protocol: target.protocol,
+    hostname: target.hostname,
+    path: target.pathname,
     query,
     headers: {
-      host: url.hostname,
+      host: target.hostname,
       // Required by Web Function endpoints even for empty bodies. Function URLs reject UNSIGNED-PAYLOAD
       // (signature mismatch), so send the real SHA-256 of the empty body, which both accept.
       "x-amz-content-sha256": EMPTY_BODY_SHA256,
@@ -96,7 +100,7 @@ async function once(quiet: boolean): Promise<Result> {
   let res: Awaited<ReturnType<typeof undiciFetch>>;
   let text: string;
   try {
-    res = await undiciFetch(url, { headers: signed.headers as Record<string, string>, dispatcher: agent });
+    res = await undiciFetch(target, { headers: signed.headers as Record<string, string>, dispatcher: agent });
     text = await res.text();
   } catch (e) {
     // Client-side failure (connect timeout etc.): count it, don't abort the whole run.
@@ -148,10 +152,11 @@ if (openLoop) {
     cpuSeconds,
     // Provisional per-step summary (late responses are added to the final one); survives a crash further on.
     onStep: (s) => console.log(`STEP_JSON ${JSON.stringify(s)}`),
-    send: async (scheduledAt, step) => {
+    send: async (scheduledAt, step, index) => {
       const dispatchedAt = performance.now();
-      const r = await once(true);
-      return { ...r, step, lateMs: dispatchedAt - scheduledAt, fromScheduleMs: performance.now() - scheduledAt };
+      const path = mix ? pickPath(mix, values["mix-seed"]!, step, index) : undefined;
+      const r = await once(true, path ? new URL(path, base) : url);
+      return { ...r, path, step, lateMs: dispatchedAt - scheduledAt, fromScheduleMs: performance.now() - scheduledAt };
     },
   });
 
@@ -188,10 +193,10 @@ if (openLoop) {
   console.log(`load generator: ${loadgenCores().toFixed(2)} cores used on average (${os.availableParallelism()} available)`);
   console.log(
     `RESULT_JSON ${JSON.stringify({
-      target: url.href,
+      target: mix ? `${new URL("/", base).href} (mix)` : url.href,
       startedAt,
       endedAt: new Date().toISOString(),
-      options: { rates, stepSeconds, maxInflight, stopOnErrorRate },
+      options: { rates, stepSeconds, maxInflight, stopOnErrorRate, ...(mix ? { mix, mixSeed: values["mix-seed"] } : {}) },
       loadgen: { coresUsed: Number(loadgenCores().toFixed(2)), coresAvailable: os.availableParallelism() },
       stoppedEarly: out.stoppedEarly,
       unfinished: out.unfinished,

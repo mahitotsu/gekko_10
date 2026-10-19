@@ -36,7 +36,8 @@
 | `gekko10-event-dsql-reuse` | Event (1 GB) | `reuse` | 環境内で 1 接続を保持して再利用（55 分で張り直す。切れていたら 1 回だけ再接続して再試行） |
 | `gekko10-web-noop` | Web | なし | DB なし |
 | `gekko10-web-dsql-each` | Web | `each` | リクエストごとに接続して閉じる |
-| `gekko10-web-dsql-pool` | Web | `pool` | 環境内で `AuroraDSQLPool` を共有（`DB_POOL_MAX` = 64 = maxConcurrencyPerEnvironment） |
+| `gekko10-web-dsql-pool` | Web | `pool` | 環境内で `AuroraDSQLPool` を共有（`DB_POOL_MAX` = 64 = maxConcurrencyPerEnvironment。プールの待ちが起きない対照） |
+| `gekko10-web-dsql-pool10` | Web | `pool` | 同上で `DB_POOL_MAX` = 10（node-postgres の既定値、AWS の推奨範囲 10〜20 の下限。実際のアプリに近い設定） |
 
 - Web は構成ごとに別の関数にする。メトリクスにリビジョンの次元がなく、動的な同時実行数の学習が関数単位だから。
 - Event に `reuse` を入れるのは、「Web で接続を共有する効果」と「単に接続を使い回す効果」を切り分ける対照のため。Event は 1 環境が同時に 1 リクエストしか処理しないので、プールは実質 1 接続になる。
@@ -67,8 +68,25 @@
 | `maxInFlight` | この環境での同時処理数の最大値（`/wait` は完了時点） |
 | `requestId` | Web Functions の `lambda-web-request-id`（Event では null） |
 | `waitedMs` | `/wait` のみ |
+| `appMs` | ハンドラの中で使った時間（応答を作る直前まで）。クライアントの時間から引くと、アプリの外（経路・入口・変換）の時間が出る |
+| `bootMs` | プロセスの開始からアプリの読み込みが終わるまでの時間（環境ごとに一定） |
+| `build` | この関数のコードの版。`src/`・`scripts/bundle.mjs`・`scripts/build-id.mjs`・`package-lock.json` を最後に変えたコミットの SHA（未コミットの変更があれば末尾に `-dirty`）。`scripts/build-id.mjs` が計算し、`scripts/bundle.mjs` が埋め込む |
 
 `/wait?ms=N` の N は 0〜25000 の整数。範囲外・不正は 400。
+
+### アプリの形のエンドポイント（`/app/*`、`src/scenarios.ts`）
+実際のアプリのリクエストに近い形。どれも複数の `db.run` を呼び（プールは 1 文ごとに貸し借りする、一般的な `pool.query` の使い方）、応答の `db` に合算したトレースを載せる（`acquireMs`・`queryMs`・`releaseMs` は合計、`queries` は文の数、`queryMaxMs` は最長の 1 文）。パラメータは、再デプロイなしで較正するためにリクエストで渡す。
+
+| パス | 中身 | パラメータ |
+|---|---|---|
+| `/app/item` | 主キーの読み取り 1 回 | なし |
+| `/app/detail` | 読み取りを順に n 回（N+1 の画面） | `n`（1〜100、既定 11） |
+| `/app/report` | `items` の先頭 k 行の自己結合の集計 1 回（重いクエリ） | `k`（1〜1000、既定 300） |
+| `/app/render` | 読み取り 1 回のあとに、SHA-256 を w 回連ねる CPU 処理（固定の仕事量） | `w`（0〜1,000,000、既定 10,000） |
+| `/app/write` | `events` への INSERT 1 回（UUID の主キー） | なし |
+| `/app/external` | 読み取り → ms の待ち（外部 API・LLM の代わり。待ち中は接続を返す）→ INSERT | `ms`（0〜25000、既定 1000） |
+
+不正なパラメータは DB に触れる前に 400、未知のパスは 404、DB のない関数は 501。`events` は `npm run db-setup -- <エンドポイント>` が作り、測定のあとに `--reset-events` で消す。
 
 ### `/db/*`
 - `/db/ping`: `SELECT 1`。接続のコストだけを見る基準。
@@ -84,6 +102,7 @@
 | `reconnected` | reuse のみ。共有していた接続が切れていて、再接続して再試行した |
 | `acquireMs` | 接続が使えるようになるまで。each は接続の確立、reuse は 0（再接続時のみ確立）、pool は `pool.connect()`（トークンの署名を含む） |
 | `queryMs`, `releaseMs` | 問い合わせ、解放（each は `end()`、pool は `release()`） |
+| `queries`, `queryMaxMs` | 1 リクエストで実行した文の数、最長の 1 文（`/app/*` で複数の文を実行したとき。この場合 `acquireMs`・`queryMs`・`releaseMs` は合計） |
 | `connectionAgeMs` | 使った接続の経過時間（reuse, pool） |
 | `pool` | `{ total, idle, waiting }`（pool のみ） |
 | `envConnectionsCreated` | この環境が作った接続の通算数 |
@@ -102,20 +121,22 @@
 
 ## 7. 負荷生成の仕組み
 - 東京の Fargate タスクから `scripts/invoke.ts` を実行する（`Gekko10LoadStack`、`scripts/load-run.sh`）。常設のリソースを持たず、使うときだけ `run-task` で起動する。
-- `lib/load-stack.ts`: デフォルト VPC を `Vpc.fromLookup` で参照し、`ecs.Cluster` に渡す（VPC は作らない）。セキュリティグループ（入口なし）、ロググループ（1 週間）、2 vCPU / 4 GB（x86_64）のタスク定義。VPC・サブネット・NAT・VPC エンドポイント・ロードバランサ・サービスは作らない。
-- タスクロール: 6 つの関数に絞った `lambda:InvokeFunctionUrl`（Event）と `lambda:InvokeWebFunctionEndpoint`（Web）のみ。
-- イメージ: `load/Dockerfile`。`scripts/bundle-load.mjs` が `invoke.ts` を 1 ファイル（`load/invoke.mjs`）にまとめる。CDK のブートストラップ用 ECR に push される。
+- `lib/load-stack.ts`: デフォルト VPC を `Vpc.fromLookup` で参照し、`ecs.Cluster` に渡す（VPC は作らない）。セキュリティグループ（入口なし）、ロググループ（1 か月。測定の結果をログから回収するため）、2 vCPU / 4 GB（x86_64）のタスク定義。VPC・サブネット・NAT・VPC エンドポイント・ロードバランサ・サービスは作らない。
+- タスクロール: 測定する関数に絞った `lambda:InvokeFunctionUrl`（Event）と `lambda:InvokeWebFunctionEndpoint`（Web）。加えて、タスクの中の後処理（§7b）のための読み取り専用の権限: `cloudwatch:GetMetricData`（リソースの指定ができない）、Event のロググループ（`/aws/lambda/gekko10-event-*`）への `logs:StartQuery`、`logs:GetQueryResults` / `StopQuery`。
+- イメージ: `load/Dockerfile`。`scripts/bundle-load.mjs` が `invoke.ts` と `suite-runner.ts` を 1 ファイルずつ（`load/invoke.mjs`、`load/suite-runner.mjs`。ビルドの生成物で git には入れない）にまとめる。CDK のブートストラップ用 ECR に push される。
 - `scripts/load-run.sh [--max-seconds N] -- <invoke.ts の引数>`: スタックの出力からクラスタ・サブネットなどを取り、`assignPublicIp=ENABLED` で起動して、終了を待ち、CloudWatch Logs の出力を表示する。最大実行時間（既定は `--duration` + 180 秒、なければ 600 秒）を超えたとき、Ctrl-C のとき、エラーのときは `stop-task` で止める。
 - 接続は `undici` の `Agent` で上限を設ける（`--max-connections`、既定 256。keep-alive 60 秒、接続のタイムアウト 30 秒）。上限がないと、一時的な遅延が新規接続の集中を招き、生成側が詰まる（[findings.md](findings.md) §3-4）。
 - 生成側が飽和していないかは、`invoke.ts` の出力（`loadgenCoresUsed` / `loadgenCoresAvailable`、`--duration` では `load generator:` 行）で確認する。
 
-### 7b. P1 を 1 つのタスクで最後まで流す（`p1-start` / `p1-runner` / `p1-fetch`）
-数時間かかる実行を、ローカル PC のスリープや AWS の認証の期限に左右されずに行うための仕組み。
-- `scripts/p1-start.ts`（ローカル）: 計画を作り（`scripts/p1-plan.ts`。シードつきの乱数で順序を決め、待ちは 5 分、「毎回接続」の後は 15 分）、**1 つの Fargate タスクとして起動**する。タスク ID と、停止・回収のコマンドを表示する。`--dry-run` で、順序・待ち・終了の目安・費用だけを確認できる。すでにタスクが動いていれば起動しない（DSQL を共有するため）。
-- `scripts/p1-runner.ts`（コンテナ内）: 計画どおりに待ち、`invoke.mjs` を回ごとの子プロセスとして実行し、出力を CloudWatch Logs に残す（`P1_RUN_BEGIN` / `P1_RUN_END` で各回を囲む）。全体の締め切り（所要時間 + 15 分）と、各回の締め切り（段の合計 + 3 分）で自分で止まる。SIGTERM（`aws ecs stop-task`）でも、実行中の回を止めて終了する。
-- `scripts/p1-fetch.ts`（ローカル）: 終了後にログを取得し、回ごとのファイル（`load-run.sh --out` と同じ形式）に分け、各回の時間帯のメトリクスを保存する。`--wait` で、タスクの終了を待ってから実行できる。
-- 回収の期限: ログは 30 日、1 分粒度のメトリクスは約 15 日。AWS へのログイン（`aws sso login`）は回収時に必要。
-- 使い方は「運用の手順」の「P1 を流す」。
+### 7b. 測定を 1 つのタスクで最後まで流す（`suite-start` / `suite-runner` / `suite-fetch`）
+数時間かかる測定を、ローカル PC のスリープや AWS の認証の期限に左右されずに行うための仕組み。測定の定義は `scripts/protocol.ts`（ケース × 構成 × 段）、計画は `scripts/suite-plan.ts`。
+- `scripts/suite-start.ts`（ローカル）: 定義から計画を作り（seed つきの乱数で順序を決める。待ちは 5 分、毎回接続の後は 15 分、**同じ関数の前回の終了から 16 分に満たなければ延ばす**）、**1 つの Fargate タスクとして起動**する。作業ツリーがクリーンであること、各関数が計画の `build` で応答すること（1 件ずつ呼んで確かめる）を要求する。タスク ID と、停止・回収のコマンドを表示し、コミット・`build`・アカウントのクォータ・計画を `results/<日付>/suite-<タスク ID>.start.json` に保存する。`--dry-run` で、順序・待ち・終了の目安・費用だけを確認できる。すでにタスクが動いていれば起動しない（DSQL を共有するため）。`--suite calibration` は較正用の小さな計画。
+- `scripts/suite-runner.ts`（コンテナ内）: 計画どおりに待ち、`invoke.mjs` を回ごとの子プロセスとして実行し、出力を CloudWatch Logs に残す（`SUITE_RUN_BEGIN` / `SUITE_RUN_END` で各回を囲む）。全体の締め切り（所要時間 + 後処理 + 15 分）と、各回の締め切り（段の合計 + 3 分）で自分で止まる。SIGTERM（`aws ecs stop-task`）でも、実行中の回を止めて終了する。
+- `scripts/suite-post.ts`（同じタスクの中、最後の回の後）: 最後の回の窓（終了の 8 分後）とメトリクスの遅れが過ぎるのを待ち、各回の CloudWatch メトリクス（`scripts/metrics-lib.ts`）と、Event の `REPORT` 行の集計（Logs Insights、`scripts/reports-lib.ts`）を集めてログに出し（`SUITE_METRICS` / `SUITE_REPORTS`。1 行 256 KB の制限に収まるよう分割）、回収後と同じ形のファイルを作って `scripts/analyze.ts` で合格基準を判定し、`SUITE_VERDICT` を出す。失敗しても測定は終わりまで進み、`SUITE_POST_FAILED` が残る。
+- `scripts/suite-fetch.ts`（ローカル）: 終了後にログを読み、回ごとのファイル（`<ケース>-set<セット>-<順>-<構成>.{log,json,meta.json,metrics.json,reports.json}`、セットごとの manifest、`suite.plan.json`）に分ける。AWS のメトリクスは呼ばない（後処理が失敗した回だけ AWS CLI で集める）。`--wait` で、タスクの終了を待ってから実行できる。
+- 回収の期限: ログは 30 日（`Gekko10LoadStack` のロググループは ONE_MONTH）。AWS へのログイン（`aws sso login`）は回収時に必要。
+- 注意: esbuild はモジュールを 1 つのファイルにまとめるため、バンドルに入るモジュールには「直接実行されたときだけ動く」判定（`import.meta.url`）を置かない。置いたのは入口のスクリプトだけ（`test/entrypoints.test.ts` が確かめる）。
+- 使い方は「運用の手順」の「測定を流す」。
 
 ## 8. 設計の判断と理由
 | 判断 | 理由 |
@@ -126,8 +147,9 @@
 | VPC を使わず、DSQL のパブリックエンドポイントに接続する | Event も Web もネットワーク設定が不要になる（Web の VPC 接続はネットワークコネクタが必要で、HomeRegion のみ） |
 | `DbStack` を関数のスタックと分ける | クラスタだけ先に作り、テーブルを用意して、バンドルを手元から実クラスタにつないで確かめてから関数をデプロイできる。クラスタを関数の作り直しから切り離す |
 | Event と Web でスタックを分け、構成はリストから作る | 更新の失敗のロールバックを分ける。構成の追加が 1 行で済む |
-| `pool` の `max` は 64（= maxConcurrencyPerEnvironment） | `max` が同時処理数より小さいと、プールの待ちが接続共有の効果に混ざるため。実際の接続数は観測した同時処理（約 25）程度に収まる見込み。maxConcurrency を変えるときは `DB_POOL_MAX` も揃える |
-| 検証のクエリは主キーでの 1 行の読み取りと `SELECT 1`。書き込みは入れない | 書き込みは commit のレイテンシと OCC の競合が支配的になり、接続のコストが見えにくくなるため |
+| `pool` の `max` は 64（`web-dsql-pool`）と 10（`web-dsql-pool10`）の 2 つ | 64 = maxConcurrencyPerEnvironment は、プールの待ちが接続共有の効果に混ざらない対照。10 は node-postgres の既定値で、AWS の推奨（アプリのインスタンスあたり 10〜20）の下限。実際のアプリはこの辺りなので、プールの待ちも測る。maxConcurrency を変えるときは `DB_POOL_MAX` も揃える |
+| 書き込みは `events` への INSERT（UUID の主キー）だけ。更新や競合する書き込みは入れない | commit のレイテンシは含めつつ、OCC の競合が結果を支配しないようにするため（Event と Web の差は DSQL の競合に依存しない） |
+| 応答に版（`build`）とアプリ内の処理時間（`appMs`）を載せる | 結果のファイルだけで「どのコードで測ったか」を確かめ、時間の内訳（DB・アプリ内・アプリの外）を要求ごとの引き算で出すため |
 | admin ロールで接続する | 検証用で、独自ロールの作成手順を増やさないため。リソースはクラスタの ARN のみ |
 | コネクタの `customCredentialsProvider` を渡さない | 渡さない場合のコネクタの既定は `fromNodeProviderChain({profile})`（ソースで確認）で、Lambda では環境変数の認証情報が使われるため |
 | 負荷生成は `invoke.ts` を Fargate で実行する。k6 と EC2 は使わない | 署名の実装がすでにある。常設のリソースを持たない。k6 の利点は到着レート固定（open model）だが、`invoke.ts` は並行数固定（closed model）。必要になったら `--rate` を足すか k6 を検討する |
@@ -226,17 +248,20 @@ scripts/load-run.sh -- https://<endpoint> --path /db/read --duration 300 --concu
 ```
 出力の `loadgenCoresUsed` が `loadgenCoresAvailable`（2）に近いときは、生成側が飽和しているので、その結果は採用しない。
 
-### P1 を流す（数時間かかる実行）
+### 測定を流す（数時間かかる実行）
+測定の定義は `scripts/protocol.ts`。順序は、測定前に [plan.md](plan.md) §8 の手順（較正 → 固定 → 見積もり → 承認 → 起動）を踏む。
 ```sh
-npm run p1-start -- --sets 1,2 --seed 20261019 --dry-run    # 順序・待ち・終了の目安・費用の確認
-npm run p1-start -- --sets 1,2 --seed 20261019              # 起動（タスク ID が表示される）
-# ここで PC をスリープしても、ログアウトしても、実行は続く
+npm run suite-start -- --suite calibration --dry-run                   # 較正（小さな計画）の確認
+npm run suite-start -- --suite measurement --seed 20261020 --dry-run  # 順序・待ち・終了の目安・費用の確認
+npm run suite-start -- --suite measurement --seed 20261020             # 起動（タスク ID が表示される）
+# ここで PC をスリープしても、ログアウトしても、実行は続く（待ち、負荷、メトリクスの収集、分析、合否の判定まで）
 aws sso login
-npm run p1-fetch -- --task <タスク ID> --wait               # 終了を待って回収（results/<日付>/）
+npm run suite-fetch -- --task <タスク ID> --wait                       # 終了を待って回収（results/<日付>/）
+npm run analyze -- results/<日付>                                      # 手元で同じ結果を再現し、表と合否を見る
 ```
-- 1 セット（6 構成）は約 2 時間。複数セットを 1 つのタスクにまとめると、その分だけ長くなる（4 時間で Fargate は約 $0.5）。
-- 途中で止めるとき: `p1-start` が表示した `aws ecs stop-task ...`。
-- 小さな確認用に、ローカルで進める `scripts/run-p1.sh` も残している（PC を起こしておく必要がある）。
+- 1 セット（4 ケース、9 回）は約 2.5 時間。3 セットで約 7〜8 時間（Fargate は約 $1）。
+- 起動の前に、作業ツリーをクリーンにし（コミットしてから）、そのコミットをデプロイしておく。起動時に、各関数が `build` で応答することを確かめる。
+- 途中で止めるとき: `suite-start` が表示した `aws ecs stop-task ...`。
 
 ### ログとメトリクス
 - Event のログ: `/aws/lambda/<関数名>`（`REPORT` 行に Init Duration）

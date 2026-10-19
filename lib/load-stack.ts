@@ -9,7 +9,7 @@ import { Construct } from "constructs";
 /** Event Functions the load generator may call (function URL, IAM auth). */
 const EVENT_FUNCTIONS = ["gekko10-event-noop", "gekko10-event-dsql-each", "gekko10-event-dsql-reuse"];
 /** Web Functions the load generator may call (endpoint "main", IAM auth). */
-const WEB_FUNCTIONS = ["gekko10-web-noop", "gekko10-web-dsql-each", "gekko10-web-dsql-pool"];
+const WEB_FUNCTIONS = ["gekko10-web-noop", "gekko10-web-dsql-each", "gekko10-web-dsql-pool", "gekko10-web-dsql-pool10"];
 
 /**
  * Load generator: scripts/invoke.ts in a Fargate task, started on demand with scripts/load-run.sh.
@@ -80,6 +80,17 @@ export class Gekko10LoadStack extends Stack {
         ),
       }),
     );
+
+    // Post-processing inside the task (scripts/suite-post.ts) reads the metrics of the runs and the REPORT lines of the Event
+    // Functions. Read-only; GetMetricData and GetQueryResults do not support resource-level permissions.
+    taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({ actions: ["cloudwatch:GetMetricData"], resources: ["*"] }));
+    taskDefinition.taskRole.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        actions: ["logs:StartQuery"],
+        resources: [this.formatArn({ service: "logs", resource: "log-group", resourceName: "/aws/lambda/gekko10-event-*:*", arnFormat: ArnFormat.COLON_RESOURCE_NAME })],
+      }),
+    );
+    taskDefinition.taskRole.addToPrincipalPolicy(new iam.PolicyStatement({ actions: ["logs:GetQueryResults", "logs:StopQuery"], resources: ["*"] }));
 
     // Everything scripts/load-run.sh needs to call run-task.
     new CfnOutput(this, "ClusterName", { value: cluster.clusterName });

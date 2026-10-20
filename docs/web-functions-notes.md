@@ -1,5 +1,9 @@
 # Lambda Web Functions 調査メモ
 
+**この文書の読み手:** Web Functions の仕様を、出典つきで確かめたい人。実機で確かめた事実は [findings.md](findings.md)、用語は [用語集](glossary.md)。この文書は、公式ドキュメントなどの仕様の調査メモで、自分たちの観測は書かない。
+
+**目次:** 1 概要、2 リソースモデル、3 ランタイムとパッケージ、4 デプロイ方法、5 HTTP、6 スケーリング、7 認証とアクセス制御、8 メトリクスとログ、9 クォータと確認方法、10 料金、11 確認状況。
+
 調査日: 2026-10-17。優先順位は 公式ドキュメント（Developer Guide・API リファレンス・CloudFormation リファレンス）＞ AWS ブログ ＞ 第三者ブログ。
 第三者情報には「(第三者)」と付けた。実機で未確認のものは「未確認」と書いた。
 
@@ -11,7 +15,10 @@
 - [Steele] https://awsteele.com/blog/2026/10/12/some-notes-on-lambda-web-functions.html (第三者)
 
 ## 1. 概要
-- Web Functions は、ポートで listen する HTTP サーバーをそのままデプロイする Lambda の形態。ハンドラやイベント変換は不要。zip でデプロイし、Lambda が HTTPS エンドポイントを作る。0 台までスケールインする。 [DG web-functions.html]
+- Web Functions は、ポートで listen する HTTP サーバーをそのままデプロイする Lambda の形態。
+  - ハンドラやイベント変換は不要。
+  - zip でデプロイし、Lambda が HTTPS エンドポイントを作る。
+  - 0 台までスケールインする。 [DG web-functions.html]
 - 課金はリクエスト数、アクティブな CPU 時間、環境が存在する間のメモリ、データ転送。 [DG web-functions.html]
 - 現時点の対応は Node.js のみ（`nodejs24.x`、arm64）。 [DG web-functions-runtimes.html]
 - 東京（ap-northeast-1）で利用可能（us-east-1/us-east-2/us-west-2/eu-west-1 も）。 [Blog]
@@ -44,16 +51,25 @@
 
 ## 4. デプロイ方法
 [DG web-functions-create.html, web-functions-code-s3.html, CFN AWS::Lambda::WebFunction*]
-- **コードは S3 からのみ**。バケットは **バージョニング必須**。バケットポリシーで `lambda.amazonaws.com` に `s3:GetObject`/`s3:GetObjectVersion` を許可し、`aws:SourceArn` を `arn:aws:lambda:<region>:<account>:web-function/<name>/revision/*` に絞る。SSE-KMS ならキーポリシーにも許可が要る。
+- **コードは S3 からのみ**。
+  - バケットは **バージョニング必須**。
+  - バケットポリシーで `lambda.amazonaws.com` に `s3:GetObject`/`s3:GetObjectVersion` を許可し、`aws:SourceArn` を `arn:aws:lambda:<region>:<account>:web-function/<name>/revision/*` に絞る。
+  - SSE-KMS ならキーポリシーにも許可が要る。
 - リビジョンは S3 のオブジェクトバージョンに固定される。**そのバージョンを消すとリビジョンは Failed になり、復旧できない**。
-- CLI: `aws lambda-web deploy --name X --code ./dir [--auth-type IamAuth] [--create]`。バケットとロールは自動作成（デフォルト）。デフォルトの認証は **ApplicationManaged（公開）** なので、非公開にするには `--auth-type IamAuth` が必要。低レベルの API は `create-web-function` / `create-web-function-revision` / `update-web-function-endpoint`。
+- CLI: `aws lambda-web deploy --name X --code ./dir [--auth-type IamAuth] [--create]`。
+  - バケットとロールは自動作成（デフォルト）。
+  - デフォルトの認証は **ApplicationManaged（公開）** なので、非公開にするには `--auth-type IamAuth` が必要。
+  - 低レベルの API は `create-web-function` / `create-web-function-revision` / `update-web-function-endpoint`。
 - `lambda-web` コマンドは AWS CLI の新しいバージョンが必要。このマシンは 2.31.35 で、(第三者) 2.37.12 では `get-web-account-settings` しかなく 2.37.13 から全コマンドがある。 [Steele]
 - **CloudFormation**: `AWS::Lambda::WebFunction`（名前とタグのみ）、`AWS::Lambda::WebFunctionRevision`、`AWS::Lambda::WebFunctionEndpoint` の 3 つに分かれる。
   - Revision の全プロパティは「更新で置き換え」。
   - Endpoint の `RevisionWeights` は更新で無停止。`AutoDeploymentMode` は CFN にない。
   - (第三者) コードを変えると CFN は新しいリビジョンを作ってエンドポイントを付け替え、古いリビジョンを削除する。ネイティブの重み付き（カナリア）は使いにくい。 [Steele]
   - 実機の確認（デプロイの成功、F3006 の警告、`BucketDeployment` の `objectKeys` とキーのプレフィックス、ロググループの `Arn` が `:*` で終わること）は [findings.md](findings.md) の §1-5。
-- **CDK**: aws-cdk-lib 2.273.0 に L1 の `CfnWebFunction` / `CfnWebFunctionRevision` / `CfnWebFunctionEndpoint` がある。L2 はない。SAM には `AWS::Serverless::WebFunction` がある（第三者）。このリポジトリは L1 で書いた。
+- **CDK**: aws-cdk-lib 2.273.0 に L1 の `CfnWebFunction` / `CfnWebFunctionRevision` / `CfnWebFunctionEndpoint` がある。
+  - L2 はない。
+  - SAM には `AWS::Serverless::WebFunction` がある（第三者）。
+  - このリポジトリは L1 で書いた。
 
 ## 5. HTTP
 [DG web-functions-http.html]
@@ -73,25 +89,43 @@
 | maxEnvironments | Endpoint | 2〜10,000 | なし |
 | rateLimit | Endpoint | 0〜10,000 RPS（1,000 以下は 100 の倍数、超えるなら 1,000 の倍数） | なし |
 
-- **maxConcurrencyPerEnvironment は上限にすぎない**。実際の同時実行数の上限は Lambda が資源の使用状況から動的に決める。新しい関数では保守的な値から始まり、学習した値は 0 台までスケールインしても保持される。**最初の負荷試験は環境が多めになる**ので、2 回目以降を使うように書かれている。
+- **maxConcurrencyPerEnvironment は上限にすぎない**。
+  - 実際の同時実行数の上限は Lambda が資源の使用状況から動的に決める。
+  - 新しい関数では保守的な値から始まり、学習した値は 0 台までスケールインしても保持される。
+  - **最初の負荷試験は環境が多めになる**ので、2 回目以降を使うように書かれている。
 - 環境の先行スケールアップ（headroom）がある。急激な増加では、既存環境に空きがなければコールドスタートを待つ。
 - 上限（maxEnvironments・アカウントの vCPU）に達し、空きもなければ **キューせず即 429**。環境が初期化中のときだけキューされる。
 - **スケールの 2 つの次元**: 環境の数（水平）と、環境あたりの同時リクエスト数（Lambda が動的に管理）。**環境のサイズ（vCPU・メモリ）を自動で変える仕組み（垂直スケール）は、ドキュメントにない**（環境は 2 vCPU / 2 GB 固定）。 [DG web-functions-scaling.html]
-- **環境数の増減**: 既存の環境が動的な上限に近づくと増やす。余力（headroom）を保つよう需要の先回りで増やす。トラフィックが減ると、利用率の低い環境をドレイン（新規の振り分けを止め、実行中を best-effort で待ち、SIGTERM）して取り除く。0 台まで下がる。 [DG web-functions-scaling.html の Scale up / Scale down]
-- **動的な上限の調整**: 新しい関数は保守的な値から始まり、リソースの使用状況に基づいて素早く調整される。調整の**信号（CPU / メモリ / レイテンシのどれか）と速さの数値は、ドキュメントに書かれていない**。実測で確かめる（[findings.md](findings.md) §1-1）。
-- `maxConcurrencyPerEnvironment` の選び方（ドキュメントの助言）: I/O 待ち中心なら、既定より高くすると環境あたりの利用率が上がり、費用が下がる可能性がある。CPU 中心なら、低くすると競合が減りレイテンシが安定するが、コールドスタートが増えうる。メモリ中心なら、低くすると挙動が予測しやすい。 [DG web-functions-scaling.html の Choosing scaling settings]
+- **環境数の増減**: 既存の環境が動的な上限に近づくと増やす。
+  - 余力（headroom）を保つよう需要の先回りで増やす。
+  - トラフィックが減ると、利用率の低い環境をドレイン（新規の振り分けを止め、実行中を best-effort で待ち、SIGTERM）して取り除く。
+  - 0 台まで下がる。 [DG web-functions-scaling.html の Scale up / Scale down]
+- **動的な上限の調整**: 新しい関数は保守的な値から始まり、リソースの使用状況に基づいて素早く調整される。
+  - 調整の**信号（CPU / メモリ / レイテンシのどれか）と速さの数値は、ドキュメントに書かれていない**。
+  - 実測で確かめる（[findings.md](findings.md) §1-1）。
+- `maxConcurrencyPerEnvironment` の選び方（ドキュメントの助言）: I/O 待ち中心なら、既定より高くすると環境あたりの利用率が上がり、費用が下がる可能性がある。
+  - CPU 中心なら、低くすると競合が減りレイテンシが安定するが、コールドスタートが増えうる。
+  - メモリ中心なら、低くすると挙動が予測しやすい。 [DG web-functions-scaling.html の Choosing scaling settings]
 - (第三者) maxEnvironments を小さく設定すると、バーストで 429 が多く出た。設定しない方がよいという報告。 [Steele]
 - (第三者) 環境の寿命は 4.5〜10.5 分、リクエストの来ない環境は約 5 分で回収された。 [Steele]
 - スケールインは環境の利用率が低いとき。0 台になるまで下がる。
 
 ## 7. 認証とアクセス制御
 [DG web-functions-endpoint-access-control.html, web-functions-permissions.html]
-- `IamAuth`: SigV4（サービス名 `lambda`、リージョンはエンドポイントのもの）。MultiRegion は SigV4a。**`X-Amz-Content-SHA256` ヘッダが必須**（本文がなくても。署名しないなら `UNSIGNED-PAYLOAD`）。なければ 403。
-- 呼び出しの IAM アクションは `lambda:InvokeWebFunctionEndpoint`。リソースは `arn:aws:lambda:<region>:<account>:web-function/<name>/endpoint/<endpoint>`。同一アカウントなら呼び出し側の IAM ポリシーだけでよい。
+- `IamAuth`: SigV4（サービス名 `lambda`、リージョンはエンドポイントのもの）。
+  - MultiRegion は SigV4a。
+  - **`X-Amz-Content-SHA256` ヘッダが必須**（本文がなくても。
+  - 署名しないなら `UNSIGNED-PAYLOAD`）。
+  - なければ 403。
+- 呼び出しの IAM アクションは `lambda:InvokeWebFunctionEndpoint`。
+  - リソースは `arn:aws:lambda:<region>:<account>:web-function/<name>/endpoint/<endpoint>`。
+  - 同一アカウントなら呼び出し側の IAM ポリシーだけでよい。
 - `ApplicationManaged`: Lambda は認証しない（誰でも呼べる）。リソースポリシーも評価されない。
 - 公開されたリソースポリシー（Principal `*` など）は付けられない。
 - CloudFront を前に置く場合は OAC（origin type `lambda`、署名は `always-amz-auth`）。
-- 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。**[DG] を採る**。実機の確認と、関数URLとの `UNSIGNED-PAYLOAD` の扱いの違いは [findings.md](findings.md) の §1-4。
+- 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。
+  - **[DG] を採る**。
+  - 実機の確認と、関数URLとの `UNSIGNED-PAYLOAD` の扱いの違いは [findings.md](findings.md) の §1-4。
 
 ## 8. メトリクスとログ
 [DG web-functions-monitoring.html, web-functions-monitoring-metrics.html]
@@ -106,8 +140,12 @@
 - **リビジョンの次元はない**。リビジョン別に見たいときは、環境変数でビルドを識別してログかカスタムメトリクス（EMF）に入れる。
 - 同時初期化の 429 はどのスロットルメトリクスにも出ない。
 - `EndpointActiveEnvironments` はリクエストがあるときだけ出る。
-- ログ: `/aws/lambda/web/<name>.local`（各リージョン）→ `/aws/lambda/web/<name>`（ホームに集約）。実行ロールに両方への logs 権限が必要。**どちらもデフォルトは保持期限なし**。 [DG web-functions-permissions.html]
-- (第三者) システムログのイベント: `platform.initStart` / `initReport` / `invokeStart` / `invokeSummary`（1 分ごと。リクエスト数・最大同時数・CPU・メモリ）/ `spinDownStart` / `spinDownReport`。環境の初期化は依存のないアプリで 253 ms。 [Steele]
+- ログ: `/aws/lambda/web/<name>.local`（各リージョン）→ `/aws/lambda/web/<name>`（ホームに集約）。
+  - 実行ロールに両方への logs 権限が必要。
+  - **どちらもデフォルトは保持期限なし**。 [DG web-functions-permissions.html]
+- (第三者) システムログのイベント: `platform.initStart` / `initReport` / `invokeStart` / `invokeSummary`（1 分ごと。
+  - リクエスト数・最大同時数・CPU・メモリ）/ `spinDownStart` / `spinDownReport`。
+  - 環境の初期化は依存のないアプリで 253 ms。 [Steele]
 - X-Ray のトレースヘッダは素通し。Lambda は追加しない。
 
 ## 9. クォータと確認方法
@@ -123,7 +161,9 @@
 
 - **新規アカウントでは低く設定される**（使用実績に応じて自動で引き上げられる）。(第三者) 新しいアカウントで 200 vCPU（100 環境）/ 10,000 RPS だった。 [Steele]
 - このアカウントの実測（ドキュメントの既定より低い）は [findings.md](findings.md) の §1-3。
-- 確認: `aws lambda-web get-web-account-settings --region ap-northeast-1`（`GET /2025-03-07/web-account-settings`）。レスポンスは `accountQuotas{maxEndpointsPerFunction, maxRevisionsPerFunction, maxTotalArmVCpus, maxTotalRateLimit}` と `accountUsage{functionCount}`。Service Quotas のコンソールにも出る。
+- 確認: `aws lambda-web get-web-account-settings --region ap-northeast-1`（`GET /2025-03-07/web-account-settings`）。
+  - レスポンスは `accountQuotas{maxEndpointsPerFunction, maxRevisionsPerFunction, maxTotalArmVCpus, maxTotalRateLimit}` と `accountUsage{functionCount}`。
+  - Service Quotas のコンソールにも出る。
 
 ## 10. 料金
 [https://aws.amazon.com/lambda/pricing/ ]（us-east-1）

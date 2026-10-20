@@ -1,85 +1,44 @@
 # gekko_10
 
-AWS Lambda の **Web Functions** と **Event Functions（関数URL）** を、**Aurora DSQL** をバックエンドにして比較する検証リポジトリです。
+AWS Lambda の **Event Functions**（関数URL）と **Web Functions** を、**Aurora DSQL** をバックエンドにして比べた検証のリポジトリ。
 
-> 問い: Web Functions は 1 つの実行環境で複数のリクエストを同時に処理できる。DSQL の接続を環境内で共有すると、レイテンシ・DSQL 側の接続数・コストは、Event Functions と比べてどう変わるか。
+**読み手:** AWS を使うが、この検証を知らない技術者。
 
-同じ [Hono](https://hono.dev/) アプリを両方の形態で動かし、DSQL への接続の持ち方（毎回接続 / 再利用 / プール共有）を変えて測ります。リージョンは ap-northeast-1（東京）、IaC は AWS CDK（TypeScript）です。
+## 答え
+- **待ちが長い処理ほど、Web の方が安い。** 外部 API を 1 秒待つ処理では、100 万件あたり約 12 分の 1 だった。
+- **短い処理では、コストはほぼ同じ。** Web の方が、応答が数 ms 速い。
+- **Web は、プール上限が先に詰まる。** 上限 10 のプールは、250 ms の集計を毎秒 400 件で受けると飽和した。
 
-## 現在の状況
-- 完了: DB なしの関数、DSQL クラスタ、DSQL につなぐ関数、アプリの形のエンドポイント（`/app/*`）、負荷生成の仕組み（東京の Fargate タスク）、測定の定義と、収集・分析までタスクの中で進める進行役。
-- 次: 較正（デプロイ後）→ 測定（外部 I/O を挟む API、混在した API、急なスパイク、重い集計）。設計は [docs/plan.md](docs/plan.md) §8。
-- 検証の途中です。最初の予備測定（固定の短いクエリ）の結果は [docs/report.md](docs/report.md) にありますが、競合が起きない条件だったので、測定の定義を作り直しました。結論はまだ出ていません。
+条件と根拠は [報告書](docs/report.md)。使い分けの目安は、その 2-5 節。
 
-## 比較する関数
-| 関数 | 形態 | DB の接続 |
-|---|---|---|
-| `gekko10-event-noop` / `gekko10-web-noop` | Event / Web | なし（基準） |
-| `gekko10-event-dsql-each` / `gekko10-web-dsql-each` | Event / Web | リクエストごとに接続する |
-| `gekko10-event-dsql-reuse` | Event | 環境内で 1 接続を再利用する |
-| `gekko10-web-dsql-pool` | Web | 環境内のプールを共有する |
+## 何を調べたか
+Web は、1 つの実行環境で複数のリクエストを同時に処理する。Event は、1 つの環境が同時に 1 つだけ処理する。この違いが、実際のアプリに近い 4 つの使い方（外部 API を待つ、混在した API、急なスパイク、重い集計）で、コスト・速さ・負荷への強さにどう出るかを、同じ DSQL と東京の条件で測った。
 
-詳しい構成、エンドポイントの仕様、設計の判断は [docs/architecture.md](docs/architecture.md) にあります。
+## 読む順番
+| 知りたいこと | 読む文書 |
+|---|---|
+| 結論と使い分けの目安 | [docs/report.md](docs/report.md) |
+| 何を、なぜ、どう測ったか | [docs/plan.md](docs/plan.md) |
+| 構成とエンドポイントの仕様 | [docs/architecture.md](docs/architecture.md)（設計の理由は [docs/design-decisions.md](docs/design-decisions.md)） |
+| 動かし方（デプロイ、測定、後片付け） | [docs/runbook.md](docs/runbook.md) |
+| 確かめた個別の事実（単価、クォータ、挙動） | [docs/findings.md](docs/findings.md) |
+| 経過と費用の実績、次の候補 | [docs/log.md](docs/log.md) |
+| 用語 | [docs/glossary.md](docs/glossary.md) |
+| Web Functions の仕様の調査メモ（出典つき） | [docs/web-functions-notes.md](docs/web-functions-notes.md) |
 
-## 前提
-- Node.js 24、npm、Docker
-- AWS CLI v2 の新しいバージョン（`lambda-web` コマンドが必要。2.38.1 で動作を確認）
-- AWS の認証情報と、ap-northeast-1 での `cdk bootstrap`
-
-## 使い方
-### ローカルで確認する
-```sh
-npm install
-npm test
-npm run typecheck
-npm run bundle
-AWS_LAMBDA_HTTP_ENDPOINT=127.0.0.1:3000 node dist/web/index.js   # 別のターミナルで curl localhost:3000/noop
-```
-
-### デプロイする
-```sh
-npx cdk deploy Gekko10DbStack                     # DSQL クラスタ
-npm run db-setup -- <出力された Endpoint>          # テーブルと 1,000 行
-npx cdk deploy Gekko10EventStack Gekko10WebStack  # 関数
-```
-認証はどちらも IAM です。署名なしのリクエストは 403 になります。呼び出し方（SigV4）は [docs/architecture.md](docs/architecture.md) の「運用の手順」にあります。
+## 最短の使い方
+前提は Node.js 24、npm、Docker、AWS CLI v2（`lambda-web` コマンドが使える新しい版）、AWS の認証情報と、ap-northeast-1 での `cdk bootstrap`。詳しい手順は [runbook](docs/runbook.md)。
 
 ```sh
-npm run invoke -- <URL> --path /db/read --count 20 --concurrency 4
-```
-
-### 負荷をかける
-手元からは通信が不安定でレイテンシも使えないので、東京の Fargate タスクから実行します。使うときだけ起動し、終われば課金が止まります。
-```sh
-npx cdk deploy Gekko10LoadStack   # 初回のみ
-scripts/load-run.sh -- <URL> --path /db/read --duration 300 --concurrency 100
-```
-数時間かかる測定は、1 つの Fargate タスクが最後まで実行する（待ち、負荷、メトリクスの収集、分析、合否の判定まで）ので、**PC がスリープしても、AWS の認証が切れても止まりません**。
-```sh
-npm run suite-start -- --suite measurement --seed 20261020 --dry-run   # 計画・終了の目安・費用の確認
-npm run suite-start -- --suite measurement --seed 20261020             # 起動（作業ツリーがクリーンで、デプロイ済みであること）
-npm run suite-fetch -- --task <タスク ID> --wait                       # 後日、回収（ログは 30 日）
-npm run analyze -- results/<日付>                                      # 手元で同じ結果を再現
-```
-**負荷をかけると Lambda・DSQL・Fargate の料金が発生します。** 実行前に規模と費用を見積もってください。
-
-### 片付ける
-```sh
-npx cdk destroy Gekko10WebStack Gekko10EventStack Gekko10LoadStack   # 先に関数
-npx cdk destroy Gekko10DbStack                                       # 最後にクラスタ（データも消える）
+npm install && npm test                                          # ローカルでの確認
+npx cdk deploy Gekko10DbStack                                    # DSQL クラスタ
+npm run db-setup -- <出力された Endpoint>                         # テーブル
+npx cdk deploy Gekko10EventStack Gekko10WebStack Gekko10LoadStack # 関数と負荷生成
+npm run suite-start -- --suite measurement --seed <数値> --dry-run # 測定の計画と費用の確認
 ```
 
 ## 費用の注意
-- 関数は呼ばれない限り費用が発生しません。**DSQL クラスタは使った分（DPU とストレージ）の課金**です。
-- `cdk deploy` は、CDK のブートストラップ用の ECR と S3 に成果物を残します。不要になったら `cdk gc --unstable=gc` で整理できます（まず `--action print` で対象を確認してください）。
-- Web Functions のアカウント上限は新しいアカウントで低く設定され、使用実績に応じて自動で引き上げられます（このアカウントは当初 100 環境 / 10,000 RPS、現在は 400 環境 / 40,000 RPS）。負荷試験の前に確認してください。
-
-## 文書
-| 文書 | 内容 |
-|---|---|
-| [docs/plan.md](docs/plan.md) | 目的、仮説、比較する構成、負荷パターン、計測項目、コストの計算、段階 |
-| [docs/architecture.md](docs/architecture.md) | 構成、エンドポイントの仕様、設計の判断、運用の手順 |
-| [docs/report.md](docs/report.md) | 予備測定（v1）の結果。測定のあとに書き直す |
-| [docs/findings.md](docs/findings.md) | 実機で確かめた事実（結論と根拠）、未確認の一覧 |
-| [docs/web-functions-notes.md](docs/web-functions-notes.md) | Web Functions の仕様の調査メモ（出典つき） |
-| [CLAUDE.md](CLAUDE.md) | AI（Claude Code）向けの作業の約束事 |
+- **負荷をかけると、Lambda・DSQL・Fargate の料金が発生する。** 実行前に、規模と費用を見積もる。1 回の測定（27 回）は、定価で約 $6.4 だった。
+- 関数は、呼ばれない限り費用が発生しない。DSQL は、使った分（DPU とストレージ）の課金。
+- `cdk deploy` は、CDK のブートストラップ用の ECR と S3 に成果物を残す。不要になったら `cdk gc --unstable=gc` で整理する（先に `--action print` で対象を確かめる）。
+- AI（Claude Code）向けの作業の約束事は [CLAUDE.md](CLAUDE.md)。

@@ -37,7 +37,7 @@ export class Gekko10LoadStack extends Stack {
     });
 
     const logGroup = new logs.LogGroup(this, "LogGroup", {
-      // A long P1 run is fetched afterwards (npm run p1-fetch), possibly days later.
+      // A long measurement is fetched afterwards (npm run suite-fetch), possibly days later.
       retention: logs.RetentionDays.ONE_MONTH,
       removalPolicy: RemovalPolicy.DESTROY,
     });

@@ -1,6 +1,6 @@
 # 設計の判断と理由
 
-**この文書の読み手:** 「なぜ、そう作ったのか」を知りたい人。構成の事実は [architecture.md](architecture.md)、測定の設計は [plan.md](plan.md)。判断の根拠になった事実は [findings.md](findings.md)。用語は [用語集](glossary.md)。
+**この文書の読み手:** 「なぜ、そう作ったのか」を知りたい人。構成の事実は [architecture.md](../architecture.md)、測定の設計は [plan.md](plan.md)。判断の根拠になった事実は [findings.md](../findings.md)。用語は [用語集](../glossary.md)。
 
 下の表は、判断（左）と理由（右）の一覧。
 
@@ -19,6 +19,6 @@
 | コネクタの `customCredentialsProvider` を渡さない | 渡さない場合のコネクタの既定は `fromNodeProviderChain({profile})`（ソースで確認）で、Lambda では環境変数の認証情報が使われるため |
 | 負荷生成は `invoke.ts` を Fargate で実行する。k6 と EC2 は使わない | 署名の実装がすでにある。常設のリソースを持たない。k6 の利点は到着レート固定（open model）だが、`invoke.ts` は並行数固定（closed model）。必要になったら `--rate` を足すか k6 を検討する |
 | 負荷生成のタスクは public IP を付け、NAT Gateway を作らない | ECR からのイメージの取得と CloudWatch Logs への出力にインターネットへの経路が要るため。NAT Gateway は常設の課金になる |
-| 東京の単価は AWS Price List API で取得する | 公式ページには東京の単価が載っていない。取得した値は [findings.md](findings.md) に出典つきで記録する |
+| 東京の単価は AWS Price List API で取得する | 公式ページには東京の単価が載っていない。取得した値は [findings.md](../findings.md) に出典つきで記録する |
 | バンドルに入るモジュールに、「直接実行されたときだけ動く」判定（`import.meta.url`）を置かない | esbuild は、モジュールを 1 つのファイルにまとめる。まとめると、すべてのモジュールが同じ `import.meta.url` を持つので、判定が全部の入口で通ってしまう（実際に、負荷生成のタスクの中で分析のコマンドラインが動いた）。置くのは入口のスクリプトだけにし、`test/entrypoints.test.ts` で確かめる |
-| 生成側の接続数と同時実行の上限を、ケースごとに決め、計画の段階で確かめる | 上限に当たると、その段は関数ではなく、生成側を測ってしまう。しかも `lateRate` には出ない（[findings.md](findings.md) §3-7）。最大 RPS × 想定の応答時間が、上限の 6 割に収まることを `capacityProblems` が確かめる |
+| 生成側の接続数と同時実行の上限を、ケースごとに決め、計画の段階で確かめる | 上限に当たると、その段は関数ではなく、生成側を測ってしまう。しかも `lateRate` には出ない（[findings.md](../findings.md) §3-7）。最大 RPS × 想定の応答時間が、上限の 6 割に収まることを `capacityProblems` が確かめる |

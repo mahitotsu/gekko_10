@@ -1,6 +1,6 @@
 # 実機で確かめた事実
 
-**この文書の読み手:** 単価、クォータ、AWS の挙動など、個別の事実を調べに来た人。全体の結論は [report.md](report.md)、測定の設計は [plan.md](plan.md)。用語は [用語集](glossary.md)。
+**この文書の読み手:** 単価、クォータ、AWS の挙動など、個別の事実を調べに来た人。全体の結論は [report.md](report.md)、測定の設計は [plan.md](internal/plan.md)。用語は [用語集](glossary.md)。
 
 各項目は、**結論**（見出しと数行）と、**根拠**（コマンド・出典・取得日。折りたたんである）に分けて書く。日付は 2026 年、リージョンは ap-northeast-1。「予備測定」は、固定の短いクエリで 10-18〜19 に行った最初の測定。
 
@@ -52,7 +52,7 @@
 - 1,000 件・50 並行の `/wait?ms=500`（Web）: 環境 26、最大同時処理 3、コールドスタート 0。
 - 持続負荷（`/wait?ms=1000`、並行 100、180 秒、約 1.7 万件、Web）の最初の 10 秒: 環境 13、環境あたりの最大同時処理 約 10。
 - 同じ負荷の 80 秒以降: 4 環境で、環境あたり約 25。レイテンシは 1,017 ms（待機 1,000 ms）で安定。エラーは、クライアント側の接続タイムアウト 1 件のみ。
-- ドキュメントの記述と一致する（[web-functions-notes.md](web-functions-notes.md) §6、https://docs.aws.amazon.com/lambda/latest/dg/web-functions-scaling.html）。
+- ドキュメントの記述と一致する（[web-functions-notes.md](internal/web-functions-notes.md) §6、https://docs.aws.amazon.com/lambda/latest/dg/web-functions-scaling.html）。
 
 </details>
 

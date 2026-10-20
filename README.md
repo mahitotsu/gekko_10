@@ -18,13 +18,13 @@ Web は、1 つの実行環境で複数のリクエストを同時に処理す�
 | 知りたいこと | 読む文書 |
 |---|---|
 | 結論と使い分けの目安 | [docs/report.md](docs/report.md) |
-| 何を、なぜ、どう測ったか | [docs/plan.md](docs/plan.md) |
-| 構成とエンドポイントの仕様 | [docs/architecture.md](docs/architecture.md)（設計の理由は [docs/design-decisions.md](docs/design-decisions.md)） |
+| 何を、なぜ、どう測ったか | [docs/internal/plan.md](docs/internal/plan.md) |
+| 構成とエンドポイントの仕様 | [docs/architecture.md](docs/architecture.md)（設計の理由は [docs/internal/design-decisions.md](docs/internal/design-decisions.md)） |
 | 動かし方（デプロイ、測定、後片付け） | [docs/runbook.md](docs/runbook.md) |
 | 確かめた個別の事実（単価、クォータ、挙動） | [docs/findings.md](docs/findings.md) |
-| 経過と費用の実績、次の候補 | [docs/log.md](docs/log.md) |
+| 経過と費用の実績、次の候補 | [docs/internal/log.md](docs/internal/log.md) |
 | 用語 | [docs/glossary.md](docs/glossary.md) |
-| Web Functions の仕様の調査メモ（出典つき） | [docs/web-functions-notes.md](docs/web-functions-notes.md) |
+| 作業用の資料（設計、経過、設計の理由、仕様の調査メモ） | [docs/internal/](docs/internal/plan.md) |
 
 ## 最短の使い方
 前提は Node.js 24、npm、Docker、AWS CLI v2（`lambda-web` コマンドが使える新しい版）、AWS の認証情報と、ap-northeast-1 での `cdk bootstrap`。詳しい手順は [runbook](docs/runbook.md)。

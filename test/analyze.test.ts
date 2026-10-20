@@ -98,7 +98,7 @@ const run = (over: Partial<RunResult> = {}): RunResult => ({
   ...over,
 });
 
-describe("judge (plan.md §8)", () => {
+describe("judge (plan.md §7)", () => {
   it("adopts a clean run from set 2", () => {
     expect(judge(2, "0", run(), "b1")).toEqual({ adopted: true, reasons: [], stepAdopted: [true] });
   });

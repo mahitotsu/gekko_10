@@ -3,8 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 // Documents are read by people who follow links: a link or an anchor that points nowhere is a bug. The pages people read first
-// (README, report) must also keep their tables narrow (docs/plan.md, CLAUDE.md "文書の書き方").
-const files = ["README.md", "CLAUDE.md", ...readdirSync("docs").filter((f) => f.endsWith(".md")).map((f) => `docs/${f}`)];
+// (README, report) must also keep their tables narrow (docs/internal/plan.md, CLAUDE.md "文書の書き方").
+const files = ["README.md", "CLAUDE.md", ...["docs", "docs/internal"].flatMap((d) => readdirSync(d).filter((f) => f.endsWith(".md")).map((f) => `${d}/${f}`))];
 const text = (f: string) => readFileSync(f, "utf8");
 
 /** The anchor GitHub makes of a heading: lower case, punctuation removed, spaces to hyphens. */

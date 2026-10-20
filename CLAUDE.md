@@ -10,11 +10,13 @@ Lambda Web Functions と Event Functions を Aurora DSQL で比較する検証�
 読み手は、AWS を使うが、この検証を知らない技術者。1 つの文書に 1 つの役割を持たせ、混ぜない。
 - `README.md`: 入口。答え 3 行、何を調べたか、読む順番、最短の使い方。
 - `docs/report.md`: **結論を伝える**（主役）。要旨 → 結論 → 理由 → 信頼できる範囲 → 付録。
-- `docs/plan.md`: 測定の設計（なぜ・何を・どう測るか）。ケース、予測、採用と合格の基準。**状況や費用の実績は書かない**。
-- `docs/log.md`: 経過の記録。日付つきの実施、判断、費用の実績、次の候補。
-- `docs/architecture.md`: 構成と仕様（事実の一覧）。設計の理由は `docs/design-decisions.md`、手順は `docs/runbook.md`。
+- `docs/internal/`（作業用。読み手は、この検証を進める人）: 次の 4 つ。
+  - `plan.md`: 測定の設計（なぜ・何を・どう測るか）。ケース、予測、採用と合格の基準。**状況や費用の実績は書かない**。
+  - `log.md`: 経過の記録。日付つきの実施、判断、費用の実績、次の候補。
+  - `design-decisions.md`: 設計の判断と、その理由。
+  - `web-functions-notes.md`: 仕様の調査メモ（出典つき）。自分たちの観測は findings に書く。
+- `docs/architecture.md`: 構成と仕様（事実の一覧）。設計の理由は `docs/internal/design-decisions.md`、手順は `docs/runbook.md`。
 - `docs/findings.md`: 実機で確かめた個別の事実。**結論**と**根拠（コマンド・出典 URL・取得日）**を分ける。
-- `docs/web-functions-notes.md`: 仕様の調査メモ（出典つき）。自分たちの観測は findings に書く。
 - `docs/glossary.md`: 用語と、構成名の呼び名の対応。
 - 人が読む文書は日本語。AI を主語にしない（「私」「Claude」「ユーザー確認済み」と書かない）。
 
@@ -26,7 +28,7 @@ Lambda Web Functions と Event Functions を Aurora DSQL で比較する検証�
 - **用語は初出で定義するか、`docs/glossary.md` にリンクする。同じ概念は同じ語で書く。** 本文では構成名を役割で呼ぶ（Event、Web（プール 10））。コード上の名前は付録と用語集に置く。
 - **数字は、本文では 1 段落に 3 個まで。** 丸めて代表値を書く。ばらつきや詳細は付録に置く。同じ数字を複数の場所に書かず、リンクする。
 - **表は、値を引く・少数を比べるときに使う。1 表 1 メッセージ、5 列以内。** 傾向・差・例外が主張なら図にする（`npm run report-figures` が `docs/figures/` に作る）。
-- **日付・状況・費用の実績は、設計や結論の文書に書かない。** `docs/log.md` に書く。
+- **日付・状況・費用の実績は、設計や結論の文書に書かない。** `docs/internal/log.md` に書く。
 - 書き終えたら、声に出して読み、次の 5 つの試験を通す。
   1. 30 秒: タイトルと冒頭だけで、何の文書で、結論が何か分かる。
   2. 見出し: 見出しだけ読んで、筋が通る。

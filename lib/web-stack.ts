@@ -19,7 +19,7 @@ const WEB_CONFIGS: { id: string; name: string; dbMode?: "each" | "pool"; poolMax
   { id: "WebDsqlEach", name: "gekko10-web-dsql-each", dbMode: "each" },
   // The pool as large as the per-environment concurrency (64): it never has to wait.
   { id: "WebDsqlPool", name: "gekko10-web-dsql-pool", dbMode: "pool" },
-  // A pool of 10: the node-postgres default and the low end of AWS's 10-20 per application instance (docs/plan.md §8).
+  // A pool of 10: the node-postgres default and the low end of AWS's 10-20 per application instance (docs/internal/plan.md §8).
   { id: "WebDsqlPool10", name: "gekko10-web-dsql-pool10", dbMode: "pool", poolMax: 10 },
 ];
 

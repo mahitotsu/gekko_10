@@ -3,9 +3,9 @@
 **この文書の読み手:** このリポジトリのコードと AWS の構成を、調べに来た人。「何が、どう作られているか」の事実の一覧。
 
 関連する文書:
-- 設計の理由: [design-decisions.md](design-decisions.md)
+- 設計の理由: [design-decisions.md](internal/design-decisions.md)
 - 動かし方: [runbook.md](runbook.md)
-- 測定の設計: [plan.md](plan.md)
+- 測定の設計: [plan.md](internal/plan.md)
 - 確かめた事実: [findings.md](findings.md)
 - 用語: [用語集](glossary.md)
 
@@ -47,7 +47,7 @@
 
 - Web は構成ごとに別の関数にする。メトリクスにリビジョンの次元がなく、動的な同時実行数の学習が関数単位だから。
 - Event に `reuse` を入れるのは、「Web で接続を共有する効果」と「単に接続を使い回す効果」を切り分ける対照のため。Event は 1 環境が同時に 1 リクエストしか処理しないので、プールは実質 1 接続になる。
-- Event のメモリ違い（512 MB / 3.5 GB）と Web の maxConcurrency 違い（16 / 128）は、まだ作っていない（[plan.md](plan.md) §2）。
+- Event のメモリ違い（512 MB / 3.5 GB）と Web の maxConcurrency 違い（16 / 128）は、まだ作っていない（[plan.md](internal/plan.md) §2）。
 
 ## 4. スタック
 | スタック | 内容 |

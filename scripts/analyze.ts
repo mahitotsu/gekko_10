@@ -2,7 +2,7 @@
 // acceptance verdict. It reads only the collected files; it does not call AWS.
 // Command line: scripts/analyze-cli.ts (kept apart: this module is bundled into the load task, where every module would
 // count as the entry point and run its command line).
-// Adoption rules and acceptance checks: docs/plan.md §8. Prices: docs/findings.md §3-2 and §3-3 (Tokyo, AWS Price List API, fetched 2026-10-18).
+// Adoption rules and acceptance checks: docs/internal/plan.md §7. Prices: docs/findings.md §3-2 and §3-3 (Tokyo, AWS Price List API, fetched 2026-10-18).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import type { ReportsFile } from "./reports-lib.js";
@@ -150,7 +150,7 @@ export function webCost(requests: number, cpuMs: number, memoryGbSeconds: number
   });
 }
 
-// ---- adoption (plan.md §8) ----
+// ---- adoption (plan.md §7) ----
 export interface Judgement {
   adopted: boolean;
   reasons: string[];
@@ -428,7 +428,7 @@ export function analyzeDir(dir: string): Analysis {
   return { runs, plan, fargateUsd: hours * PRICE.fargateHour };
 }
 
-// ---- acceptance (docs/plan.md §8) ----
+// ---- acceptance (docs/internal/plan.md §7) ----
 export type CheckStatus = "pass" | "fail" | "na" | "note" | "hold";
 export interface Check {
   id: string;
@@ -446,7 +446,7 @@ const measured = (runs: RunOut[]) => runs.filter((r) => r.set !== 1);
 const label = (r: RunOut) => `${r.case}-set${r.set}-${r.index}-${r.name}`;
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
-/** Where each case is supposed to reach the contention point it was designed for (plan.md §8, acceptance (g)). */
+/** Where each case is supposed to reach the contention point it was designed for (plan.md §7, acceptance (g)). */
 export const REACH: Record<string, (runs: RunOut[]) => { reached: boolean; detail: string }> = {
   A: (runs) => {
     const event = runs.filter((r) => r.name.startsWith("event-"));

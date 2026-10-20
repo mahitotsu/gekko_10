@@ -1,6 +1,6 @@
-// The measurement definition (docs/plan.md §8): which cases run on which configurations. One definition, versioned with the code;
+// The measurement definition (docs/internal/plan.md §3): which cases run on which configurations. One definition, versioned with the code;
 // suite-start builds the plan from it, so the same definition and seed always give the same plan.
-// The request parameters (n, k, w, ms) are fixed by the calibration (docs/plan.md §8) and must not change between the sets.
+// The request parameters (n, k, w, ms) are fixed by the calibration (docs/internal/plan.md §8) and must not change between the sets.
 import type { CaseDef } from "./suite-plan.js";
 
 // v2.0 (results/measurement-20261020) ran cases A and C with the generator's default limits (256 sockets): the 400 RPS step of A and the
@@ -11,7 +11,7 @@ export const PROTOCOL = "v2.1";
 const APP_CONFIGS = ["event-dsql-reuse", "web-dsql-pool10"];
 
 /** Parameters of the application-shaped endpoints, as fixed by the calibration. */
-// Calibration (docs/plan.md §8): /app/report with k=800 takes about 250 ms (k=300: 39 ms, 450: 82 ms, 600: 141 ms) and costs 0.58 DPU.
+// Calibration (docs/internal/plan.md §8): /app/report with k=800 takes about 250 ms (k=300: 39 ms, 450: 82 ms, 600: 141 ms) and costs 0.58 DPU.
 export const PARAMS = { detailN: 11, reportK: 800, renderW: 10_000, externalMs: 1000 };
 
 const detail = `/app/detail?n=${PARAMS.detailN}`;

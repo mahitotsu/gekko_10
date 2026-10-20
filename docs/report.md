@@ -210,7 +210,7 @@ p50 (ms):
   - 根拠は 3 つ。Event と Web の p50 が同じ約 7.9 秒、送信が予定の約 72%、Event の環境数が 256。
   - 理論上限 256 ÷ 1.03 秒 ≒ 248 RPS と、実測の約 290 RPS も合う。
   - ケース D の Web（プール 10）の 400 RPS（2 つ）は、飽和により、生成側の上限に当たった。
-- **合格基準（[plan.md](plan.md)）の判定:**
+- **合格基準（[plan.md](internal/plan.md)）の判定:**
   - 通過: 内訳が閉じる、版の一致、件数の一致。
   - 不合格: 生成側の基準（c）。上の 8 段が原因。
   - 注記: セット間の p50 の差が 2 ms を超えた段が、52 段中 27 段。ケース C が 32 段中 22 段（最大 7 ms）で、Web の環境数がセットで違うため。
@@ -224,7 +224,7 @@ p50 (ms):
 - **図:** `npm run report-figures -- results/measurement-20261020`（`docs/figures/`）。同じ入力から同じ SVG ができる（テストで確認）。
 - **計画と起動時の記録:** `results/measurement-20261020/suite.plan.json`（計画）、`suite-<ID>.start.json`（コミット、版、クォータ）。
 - **単価:** [findings.md](findings.md) §3-2、§3-3（東京、AWS Price List API、2026-10-18 取得）。Event の課金時間は、`REPORT` の `Billed Duration`（Logs Insights）。
-- **測定の定義（ケース、予測、合格基準）:** [plan.md](plan.md)、`scripts/protocol.ts`。パラメータの較正は [findings.md](findings.md) §3-6。
+- **測定の定義（ケース、予測、合格基準）:** [plan.md](internal/plan.md)、`scripts/protocol.ts`。パラメータの較正は [findings.md](findings.md) §3-6。
 - **分析日:** 2026-10-20。
 
 ## D. 費用

@@ -1,6 +1,6 @@
 # Lambda Web Functions 調査メモ
 
-**この文書の読み手:** Web Functions の仕様を、出典つきで確かめたい人。実機で確かめた事実は [findings.md](findings.md)、用語は [用語集](glossary.md)。この文書は、公式ドキュメントなどの仕様の調査メモで、自分たちの観測は書かない。
+**この文書の読み手:** Web Functions の仕様を、出典つきで確かめたい人。実機で確かめた事実は [findings.md](../findings.md)、用語は [用語集](../glossary.md)。この文書は、公式ドキュメントなどの仕様の調査メモで、自分たちの観測は書かない。
 
 **目次:** 1 概要、2 リソースモデル、3 ランタイムとパッケージ、4 デプロイ方法、5 HTTP、6 スケーリング、7 認証とアクセス制御、8 メトリクスとログ、9 クォータと確認方法、10 料金、11 確認状況。
 
@@ -65,7 +65,7 @@
   - Revision の全プロパティは「更新で置き換え」。
   - Endpoint の `RevisionWeights` は更新で無停止。`AutoDeploymentMode` は CFN にない。
   - (第三者) コードを変えると CFN は新しいリビジョンを作ってエンドポイントを付け替え、古いリビジョンを削除する。ネイティブの重み付き（カナリア）は使いにくい。 [Steele]
-  - 実機の確認（デプロイの成功、F3006 の警告、`BucketDeployment` の `objectKeys` とキーのプレフィックス、ロググループの `Arn` が `:*` で終わること）は [findings.md](findings.md) の §1-5。
+  - 実機の確認（デプロイの成功、F3006 の警告、`BucketDeployment` の `objectKeys` とキーのプレフィックス、ロググループの `Arn` が `:*` で終わること）は [findings.md](../findings.md) の §1-5。
 - **CDK**: aws-cdk-lib 2.273.0 に L1 の `CfnWebFunction` / `CfnWebFunctionRevision` / `CfnWebFunctionEndpoint` がある。
   - L2 はない。
   - SAM には `AWS::Serverless::WebFunction` がある（第三者）。
@@ -102,7 +102,7 @@
   - 0 台まで下がる。 [DG web-functions-scaling.html の Scale up / Scale down]
 - **動的な上限の調整**: 新しい関数は保守的な値から始まり、リソースの使用状況に基づいて素早く調整される。
   - 調整の**信号（CPU / メモリ / レイテンシのどれか）と速さの数値は、ドキュメントに書かれていない**。
-  - 実測で確かめる（[findings.md](findings.md) §1-1）。
+  - 実測で確かめる（[findings.md](../findings.md) §1-1）。
 - `maxConcurrencyPerEnvironment` の選び方（ドキュメントの助言）: I/O 待ち中心なら、既定より高くすると環境あたりの利用率が上がり、費用が下がる可能性がある。
   - CPU 中心なら、低くすると競合が減りレイテンシが安定するが、コールドスタートが増えうる。
   - メモリ中心なら、低くすると挙動が予測しやすい。 [DG web-functions-scaling.html の Choosing scaling settings]
@@ -125,7 +125,7 @@
 - CloudFront を前に置く場合は OAC（origin type `lambda`、署名は `always-amz-auth`）。
 - 食い違い: [Blog] は認証を CloudFront OAC のように読める書き方をしているが、[DG] には直接の SigV4 が書かれている。
   - **[DG] を採る**。
-  - 実機の確認と、関数URLとの `UNSIGNED-PAYLOAD` の扱いの違いは [findings.md](findings.md) の §1-4。
+  - 実機の確認と、関数URLとの `UNSIGNED-PAYLOAD` の扱いの違いは [findings.md](../findings.md) の §1-4。
 
 ## 8. メトリクスとログ
 [DG web-functions-monitoring.html, web-functions-monitoring-metrics.html]
@@ -160,7 +160,7 @@
 | 1 エンドポイントが重みを割り当てるリビジョン | 2 | 不可 |
 
 - **新規アカウントでは低く設定される**（使用実績に応じて自動で引き上げられる）。(第三者) 新しいアカウントで 200 vCPU（100 環境）/ 10,000 RPS だった。 [Steele]
-- このアカウントの実測（ドキュメントの既定より低い）は [findings.md](findings.md) の §1-3。
+- このアカウントの実測（ドキュメントの既定より低い）は [findings.md](../findings.md) の §1-3。
 - 確認: `aws lambda-web get-web-account-settings --region ap-northeast-1`（`GET /2025-03-07/web-account-settings`）。
   - レスポンスは `accountQuotas{maxEndpointsPerFunction, maxRevisionsPerFunction, maxTotalArmVCpus, maxTotalRateLimit}` と `accountUsage{functionCount}`。
   - Service Quotas のコンソールにも出る。
@@ -171,7 +171,7 @@
 - CPU $0.0000276944 / vCPU 秒（実際に使った CPU 時間。1 ms 単位）
 - メモリ $0.0000036667 / GB 秒（環境が存在する間の**消費メモリ**。アイドル中も課金される）
 - データ転送は EC2 の料金に準ずる
-- 東京の単価はページに載っていない。AWS Price List API（`AWSLambda` サービス）で取得する（取得した値は [findings.md](findings.md) に記録する）。
+- 東京の単価はページに載っていない。AWS Price List API（`AWSLambda` サービス）で取得する（取得した値は [findings.md](../findings.md) に記録する）。
 
 ## 11. 確認状況
-実機で確認したこと（IamAuth の SigV4、CloudFormation / CDK でのデプロイ、クォータ、メトリクスの一致、コスト計算に使う値）と、まだ確認していないことは [findings.md](findings.md) にまとめた。この文書は、仕様と出典の調査メモとして保つ。
+実機で確認したこと（IamAuth の SigV4、CloudFormation / CDK でのデプロイ、クォータ、メトリクスの一致、コスト計算に使う値）と、まだ確認していないことは [findings.md](../findings.md) にまとめた。この文書は、仕様と出典の調査メモとして保つ。

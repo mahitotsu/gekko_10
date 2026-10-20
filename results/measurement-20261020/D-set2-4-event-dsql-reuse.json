@@ -1,0 +1,215 @@
+[
+ {
+  "target": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws/app/report?k=800",
+  "startedAt": "2026-10-19T17:54:16.138Z",
+  "endedAt": "2026-10-19T17:56:31.681Z",
+  "options": {
+   "rates": [
+    100,
+    200,
+    400
+   ],
+   "stepSeconds": 45,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.1,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 100,
+    "seconds": 45,
+    "scheduled": 4500,
+    "sent": 4500,
+    "dropped": 0,
+    "completed": 4500,
+    "ok": 4500,
+    "failures": {},
+    "latencyMs": {
+     "p50": 260.3,
+     "p95": 269.9,
+     "p99": 933.1
+    },
+    "serviceMs": {
+     "p50": 259.6,
+     "p95": 269.4,
+     "p99": 932.3
+    },
+    "db": {
+     "newConnectionPct": 2.2,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 152.6
+     },
+     "queryMs": {
+      "p50": 247,
+      "p95": 253.7,
+      "p99": 369
+     },
+     "queriesPerRequest": 1
+    },
+    "app": {
+     "appMs": {
+      "p50": 247.1,
+      "p95": 254.2,
+      "p99": 526.1
+     },
+     "outsideMs": {
+      "p50": 12.2,
+      "p95": 17.7,
+      "p99": 418.6
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.2,
+      "p99": 1.1
+     },
+     "inconsistent": 0,
+     "count": 4500
+    },
+    "achievedRps": 100,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 98,
+    "coldStarts": 98,
+    "peakInFlight": 1,
+    "loadgenCores": 0.07,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 1,
+    "rate": 200,
+    "seconds": 45,
+    "scheduled": 9000,
+    "sent": 9000,
+    "dropped": 0,
+    "completed": 9000,
+    "ok": 9000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 259.5,
+     "p95": 266.6,
+     "p99": 273.9
+    },
+    "serviceMs": {
+     "p50": 258.9,
+     "p95": 266,
+     "p99": 273.1
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 246.4,
+      "p95": 252.2,
+      "p99": 259.5
+     },
+     "queriesPerRequest": 1
+    },
+    "app": {
+     "appMs": {
+      "p50": 246.5,
+      "p95": 252.3,
+      "p99": 259.6
+     },
+     "outsideMs": {
+      "p50": 12,
+      "p95": 15.9,
+      "p99": 19.3
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 9000
+    },
+    "achievedRps": 200,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 54,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.09,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 2,
+    "rate": 400,
+    "seconds": 45,
+    "scheduled": 18000,
+    "sent": 18000,
+    "dropped": 0,
+    "completed": 18000,
+    "ok": 18000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 259.5,
+     "p95": 267.5,
+     "p99": 276.6
+    },
+    "serviceMs": {
+     "p50": 258.8,
+     "p95": 266.7,
+     "p99": 275.4
+    },
+    "db": {
+     "newConnectionPct": 0.1,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 246.2,
+      "p95": 252.1,
+      "p99": 259.8
+     },
+     "queriesPerRequest": 1
+    },
+    "app": {
+     "appMs": {
+      "p50": 246.3,
+      "p95": 252.2,
+      "p99": 259.9
+     },
+     "outsideMs": {
+      "p50": 12.1,
+      "p95": 16.5,
+      "p99": 23.7
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 18000
+    },
+    "achievedRps": 400,
+    "lateRate": 0,
+    "lateP95Ms": 1.1,
+    "environments": 119,
+    "coldStarts": 21,
+    "peakInFlight": 1,
+    "loadgenCores": 0.14,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   }
+  ]
+ }
+]

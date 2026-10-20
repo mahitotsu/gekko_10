@@ -1,0 +1,221 @@
+[
+ {
+  "target": "https://3b6qy49hxzrshrjj.g0s.lambda-web.ap-northeast-1.on.aws/app/report?k=800",
+  "startedAt": "2026-10-19T19:02:39.766Z",
+  "endedAt": "2026-10-19T19:04:55.306Z",
+  "options": {
+   "rates": [
+    100,
+    200,
+    400
+   ],
+   "stepSeconds": 45,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.1,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 100,
+    "seconds": 45,
+    "scheduled": 4500,
+    "sent": 4500,
+    "dropped": 0,
+    "completed": 4500,
+    "ok": 4500,
+    "failures": {},
+    "latencyMs": {
+     "p50": 256,
+     "p95": 266.2,
+     "p99": 816
+    },
+    "serviceMs": {
+     "p50": 255.3,
+     "p95": 265.5,
+     "p99": 815.3
+    },
+    "db": {
+     "newConnectionPct": 2.7,
+     "acquireMs": {
+      "p50": 0.4,
+      "p95": 0.6,
+      "p99": 127.1
+     },
+     "queryMs": {
+      "p50": 246.9,
+      "p95": 255.3,
+      "p99": 369.3
+     },
+     "queriesPerRequest": 1,
+     "poolWaitingMax": 0,
+     "poolTotalMax": 16
+    },
+    "app": {
+     "appMs": {
+      "p50": 247.5,
+      "p95": 256.1,
+      "p99": 494.6
+     },
+     "outsideMs": {
+      "p50": 7.5,
+      "p95": 12.2,
+      "p99": 312.2
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.2,
+      "p99": 0.3
+     },
+     "inconsistent": 0,
+     "count": 4500
+    },
+    "achievedRps": 100,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 10,
+    "coldStarts": 10,
+    "peakInFlight": 16,
+    "loadgenCores": 0.07,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 1,
+    "rate": 200,
+    "seconds": 45,
+    "scheduled": 9000,
+    "sent": 9000,
+    "dropped": 0,
+    "completed": 9000,
+    "ok": 9000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 255.5,
+     "p95": 262.6,
+     "p99": 269.3
+    },
+    "serviceMs": {
+     "p50": 254.8,
+     "p95": 261.9,
+     "p99": 268.4
+    },
+    "db": {
+     "newConnectionPct": 0.1,
+     "acquireMs": {
+      "p50": 0.4,
+      "p95": 0.5,
+      "p99": 0.5
+     },
+     "queryMs": {
+      "p50": 246.4,
+      "p95": 252.2,
+      "p99": 259.7
+     },
+     "queriesPerRequest": 1,
+     "poolWaitingMax": 0,
+     "poolTotalMax": 16
+    },
+    "app": {
+     "appMs": {
+      "p50": 246.8,
+      "p95": 252.7,
+      "p99": 260.1
+     },
+     "outsideMs": {
+      "p50": 7.5,
+      "p95": 12,
+      "p99": 13.4
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 9000
+    },
+    "achievedRps": 200,
+    "lateRate": 0,
+    "lateP95Ms": 1.1,
+    "environments": 7,
+    "coldStarts": 0,
+    "peakInFlight": 10,
+    "loadgenCores": 0.09,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 2,
+    "rate": 400,
+    "seconds": 45,
+    "scheduled": 18000,
+    "sent": 18000,
+    "dropped": 0,
+    "completed": 18000,
+    "ok": 18000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 254.8,
+     "p95": 262.7,
+     "p99": 274.9
+    },
+    "serviceMs": {
+     "p50": 254.1,
+     "p95": 261.9,
+     "p99": 273.8
+    },
+    "db": {
+     "newConnectionPct": 0.5,
+     "acquireMs": {
+      "p50": 0.3,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "queryMs": {
+      "p50": 246,
+      "p95": 251.8,
+      "p99": 260.1
+     },
+     "queriesPerRequest": 1,
+     "poolWaitingMax": 0,
+     "poolTotalMax": 23
+    },
+    "app": {
+     "appMs": {
+      "p50": 246.4,
+      "p95": 252.3,
+      "p99": 260.9
+     },
+     "outsideMs": {
+      "p50": 7.4,
+      "p95": 12.2,
+      "p99": 16.4
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.1
+     },
+     "inconsistent": 0,
+     "count": 18000
+    },
+    "achievedRps": 400,
+    "lateRate": 0,
+    "lateP95Ms": 1.2,
+    "environments": 7,
+    "coldStarts": 0,
+    "peakInFlight": 23,
+    "loadgenCores": 0.14,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   }
+  ]
+ }
+]

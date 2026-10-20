@@ -1,0 +1,221 @@
+[
+ {
+  "target": "https://gwbll1yk2t24ddsr.g0s.lambda-web.ap-northeast-1.on.aws/app/external?ms=1000",
+  "startedAt": "2026-10-19T19:57:31.790Z",
+  "endedAt": "2026-10-19T19:59:54.926Z",
+  "options": {
+   "rates": [
+    25,
+    100,
+    400
+   ],
+   "stepSeconds": 45,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.07,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 25,
+    "seconds": 45,
+    "scheduled": 1125,
+    "sent": 1125,
+    "dropped": 0,
+    "completed": 1125,
+    "ok": 1125,
+    "failures": {},
+    "latencyMs": {
+     "p50": 1020.4,
+     "p95": 1026.3,
+     "p99": 1425
+    },
+    "serviceMs": {
+     "p50": 1019.7,
+     "p95": 1025.5,
+     "p99": 1424.4
+    },
+    "db": {
+     "newConnectionPct": 1.5,
+     "acquireMs": {
+      "p50": 0.8,
+      "p95": 1,
+      "p99": 152.1
+     },
+     "queryMs": {
+      "p50": 10.4,
+      "p95": 11.7,
+      "p99": 111.7
+     },
+     "queriesPerRequest": 2,
+     "poolWaitingMax": 10,
+     "poolTotalMax": 10
+    },
+    "app": {
+     "appMs": {
+      "p50": 1011.5,
+      "p95": 1013.3,
+      "p99": 1292.7
+     },
+     "outsideMs": {
+      "p50": 8.1,
+      "p95": 12.8,
+      "p99": 143.3
+     },
+     "appOtherMs": {
+      "p50": 1000.3,
+      "p95": 1001,
+      "p99": 1001.2
+     },
+     "inconsistent": 0,
+     "count": 1125
+    },
+    "achievedRps": 25,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 3,
+    "coldStarts": 3,
+    "peakInFlight": 26,
+    "loadgenCores": 0.04,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 1,
+    "rate": 100,
+    "seconds": 45,
+    "scheduled": 4500,
+    "sent": 4500,
+    "dropped": 0,
+    "completed": 4500,
+    "ok": 4500,
+    "failures": {},
+    "latencyMs": {
+     "p50": 1018.3,
+     "p95": 1022.9,
+     "p99": 1028.3
+    },
+    "serviceMs": {
+     "p50": 1017.6,
+     "p95": 1022.2,
+     "p99": 1027.4
+    },
+    "db": {
+     "newConnectionPct": 0.2,
+     "acquireMs": {
+      "p50": 0.4,
+      "p95": 0.7,
+      "p99": 0.8
+     },
+     "queryMs": {
+      "p50": 10.1,
+      "p95": 12.1,
+      "p99": 13.6
+     },
+     "queriesPerRequest": 2,
+     "poolWaitingMax": 0,
+     "poolTotalMax": 10
+    },
+    "app": {
+     "appMs": {
+      "p50": 1010.8,
+      "p95": 1012.8,
+      "p99": 1014.3
+     },
+     "outsideMs": {
+      "p50": 6.7,
+      "p95": 10.2,
+      "p99": 15.1
+     },
+     "appOtherMs": {
+      "p50": 1000.2,
+      "p95": 1000.9,
+      "p99": 1001.1
+     },
+     "inconsistent": 0,
+     "count": 4500
+    },
+    "achievedRps": 100,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 3,
+    "coldStarts": 1,
+    "peakInFlight": 51,
+    "loadgenCores": 0.06,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 2,
+    "rate": 400,
+    "seconds": 45,
+    "scheduled": 18000,
+    "sent": 13069,
+    "dropped": 4931,
+    "completed": 13069,
+    "ok": 13069,
+    "failures": {},
+    "latencyMs": {
+     "p50": 7889.4,
+     "p95": 8009.1,
+     "p99": 8021.6
+    },
+    "serviceMs": {
+     "p50": 7888.9,
+     "p95": 8008.3,
+     "p99": 8021
+    },
+    "db": {
+     "newConnectionPct": 0.2,
+     "acquireMs": {
+      "p50": 0.5,
+      "p95": 0.8,
+      "p99": 1
+     },
+     "queryMs": {
+      "p50": 9.9,
+      "p95": 12.4,
+      "p99": 14.6
+     },
+     "queriesPerRequest": 2,
+     "poolWaitingMax": 42,
+     "poolTotalMax": 10
+    },
+    "app": {
+     "appMs": {
+      "p50": 1010.6,
+      "p95": 1013.1,
+      "p99": 1021.2
+     },
+     "outsideMs": {
+      "p50": 6878.3,
+      "p95": 6997.4,
+      "p99": 7009.2
+     },
+     "appOtherMs": {
+      "p50": 1000.2,
+      "p95": 1000.9,
+      "p99": 1001.1
+     },
+     "inconsistent": 0,
+     "count": 13069
+    },
+    "achievedRps": 290.4,
+    "lateRate": 0,
+    "lateP95Ms": 1.1,
+    "environments": 6,
+    "coldStarts": 3,
+    "peakInFlight": 64,
+    "loadgenCores": 0.12,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   }
+  ]
+ }
+]

@@ -1,0 +1,17 @@
+{
+ "logGroup": "/aws/lambda/gekko10-event-dsql-reuse",
+ "start": "2026-10-19T17:29:47.221Z",
+ "end": "2026-10-19T17:41:52.724Z",
+ "stats": {
+  "invocations": 362400,
+  "billedMs": 9577454,
+  "durationMs": 9339717.71,
+  "durationP50": 24.6905,
+  "durationP99": 41.0325,
+  "maxMemoryBytes": 180000000,
+  "coldStarts": 254,
+  "initAvgMs": 223.1013,
+  "initP50": 214.7159,
+  "initMaxMs": 635.1
+ }
+}

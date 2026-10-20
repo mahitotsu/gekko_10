@@ -1,0 +1,221 @@
+[
+ {
+  "target": "https://gwbll1yk2t24ddsr.g0s.lambda-web.ap-northeast-1.on.aws/app/report?k=800",
+  "startedAt": "2026-10-19T16:38:04.349Z",
+  "endedAt": "2026-10-19T16:40:23.591Z",
+  "options": {
+   "rates": [
+    100,
+    200,
+    400
+   ],
+   "stepSeconds": 45,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.1,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 100,
+    "seconds": 45,
+    "scheduled": 4500,
+    "sent": 4500,
+    "dropped": 0,
+    "completed": 4500,
+    "ok": 4500,
+    "failures": {},
+    "latencyMs": {
+     "p50": 255.8,
+     "p95": 266.2,
+     "p99": 764.1
+    },
+    "serviceMs": {
+     "p50": 255.1,
+     "p95": 265.5,
+     "p99": 763.8
+    },
+    "db": {
+     "newConnectionPct": 2.9,
+     "acquireMs": {
+      "p50": 0.5,
+      "p95": 0.7,
+      "p99": 122.4
+     },
+     "queryMs": {
+      "p50": 247,
+      "p95": 255.9,
+      "p99": 368.4
+     },
+     "queriesPerRequest": 1,
+     "poolWaitingMax": 0,
+     "poolTotalMax": 3
+    },
+    "app": {
+     "appMs": {
+      "p50": 247.7,
+      "p95": 257.2,
+      "p99": 491.8
+     },
+     "outsideMs": {
+      "p50": 6,
+      "p95": 11.7,
+      "p99": 264
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.3,
+      "p99": 1.7
+     },
+     "inconsistent": 0,
+     "count": 4500
+    },
+    "achievedRps": 100,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 67,
+    "coldStarts": 67,
+    "peakInFlight": 3,
+    "loadgenCores": 0.07,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 1,
+    "rate": 200,
+    "seconds": 45,
+    "scheduled": 9000,
+    "sent": 9000,
+    "dropped": 0,
+    "completed": 9000,
+    "ok": 9000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 253.2,
+     "p95": 260.9,
+     "p99": 269
+    },
+    "serviceMs": {
+     "p50": 252.5,
+     "p95": 260.2,
+     "p99": 268.4
+    },
+    "db": {
+     "newConnectionPct": 0.4,
+     "acquireMs": {
+      "p50": 0.4,
+      "p95": 0.5,
+      "p99": 0.6
+     },
+     "queryMs": {
+      "p50": 246.7,
+      "p95": 252.8,
+      "p99": 261.2
+     },
+     "queriesPerRequest": 1,
+     "poolWaitingMax": 0,
+     "poolTotalMax": 4
+    },
+    "app": {
+     "appMs": {
+      "p50": 247.2,
+      "p95": 253.4,
+      "p99": 261.9
+     },
+     "outsideMs": {
+      "p50": 5,
+      "p95": 9.9,
+      "p99": 11
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 9000
+    },
+    "achievedRps": 200,
+    "lateRate": 0,
+    "lateP95Ms": 1.1,
+    "environments": 24,
+    "coldStarts": 0,
+    "peakInFlight": 4,
+    "loadgenCores": 0.09,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 2,
+    "rate": 400,
+    "seconds": 45,
+    "scheduled": 18000,
+    "sent": 18000,
+    "dropped": 0,
+    "completed": 18000,
+    "ok": 18000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 1522.9,
+     "p95": 3509.2,
+     "p99": 3763.5
+    },
+    "serviceMs": {
+     "p50": 1522.5,
+     "p95": 3508.7,
+     "p99": 3763.4
+    },
+    "db": {
+     "newConnectionPct": 0.6,
+     "acquireMs": {
+      "p50": 421.9,
+      "p95": 655.4,
+      "p99": 725.1
+     },
+     "queryMs": {
+      "p50": 246.3,
+      "p95": 251.9,
+      "p99": 260.4
+     },
+     "queriesPerRequest": 1,
+     "poolWaitingMax": 31,
+     "poolTotalMax": 10
+    },
+    "app": {
+     "appMs": {
+      "p50": 668.4,
+      "p95": 903.4,
+      "p99": 972.5
+     },
+     "outsideMs": {
+      "p50": 828.9,
+      "p95": 2783.6,
+      "p99": 2950.6
+     },
+     "appOtherMs": {
+      "p50": 0.1,
+      "p95": 0.1,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 18000
+    },
+    "achievedRps": 400,
+    "lateRate": 0,
+    "lateP95Ms": 1.1,
+    "environments": 26,
+    "coldStarts": 2,
+    "peakInFlight": 42,
+    "loadgenCores": 0.14,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   }
+  ]
+ }
+]

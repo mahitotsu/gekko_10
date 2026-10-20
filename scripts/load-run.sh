@@ -3,7 +3,7 @@
 #
 #   scripts/load-run.sh [--max-seconds N] [--out PREFIX] -- <invoke.ts arguments>
 #   scripts/load-run.sh -- https://<endpoint> --path /db/read --duration 300 --concurrency 100
-#   scripts/load-run.sh --out results/2026-10-18/a1 -- https://<endpoint> --path /noop --rate 100 --duration 60
+#   scripts/load-run.sh --out results/<dir>/a1 -- https://<endpoint> --path /noop --rate 100 --duration 60
 #
 # --out PREFIX saves PREFIX.log (the task's output), PREFIX.json (the RESULT_JSON lines of an open-loop run, as a
 # list) and PREFIX.meta.json (task id, arguments, creation/start/stop times, exit code).

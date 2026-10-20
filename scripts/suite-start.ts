@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { buildId } from "./build-id.mjs";
 import { PROTOCOL, SUITES } from "./protocol.js";
-import { buildPlan, estimateSeconds, postSeconds, runDuration, type Plan } from "./suite-plan.js";
+import { buildPlan, capacityProblems, estimateSeconds, postSeconds, runDuration, type Plan } from "./suite-plan.js";
 
 const REGION = "ap-northeast-1";
 /** Fargate 2 vCPU / 4 GB x86_64 plus a public IPv4, per hour (docs/findings.md 3-2). */
@@ -96,6 +96,12 @@ function main() {
     minIdleSeconds: values["min-idle"] ? Number(values["min-idle"]) : suiteName.startsWith("calibration") ? 300 : undefined,
     post: { clusterId, metricsLagSeconds: METRICS_LAG_SECONDS },
   });
+
+  const problems = capacityProblems(plan.cases);
+  if (problems.length) {
+    console.error(`the load generator cannot hold the planned load:\n  ${problems.join("\n  ")}`);
+    process.exit(1);
+  }
 
   const total = estimateSeconds(plan) + postSeconds(plan);
   const hours = total / 3600;

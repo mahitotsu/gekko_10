@@ -1,0 +1,19 @@
+{
+ "taskId": "e7adbdbae6a4463ea4fd0c67fee6e516",
+ "args": [
+  "https://gwbll1yk2t24ddsr.g0s.lambda-web.ap-northeast-1.on.aws",
+  "--path",
+  "/app/external?ms=1000",
+  "--steps",
+  "25,100,400",
+  "--step-seconds",
+  "45"
+ ],
+ "exitCode": "0",
+ "timedOut": false,
+ "aborted": false,
+ "startedAt": "2026-10-19T17:43:52.731Z",
+ "stoppedAt": "2026-10-19T17:46:16.045Z",
+ "waitSeconds": 300,
+ "complete": true
+}

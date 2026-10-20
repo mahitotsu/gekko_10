@@ -1,0 +1,1060 @@
+[
+ {
+  "target": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws/app/detail?n=11",
+  "startedAt": "2026-10-19T16:24:58.670Z",
+  "endedAt": "2026-10-19T16:33:04.160Z",
+  "options": {
+   "rates": [
+    10,
+    10,
+    1500,
+    1500,
+    1500,
+    1500,
+    10,
+    10,
+    10,
+    10,
+    1500,
+    1500,
+    1500,
+    1500,
+    10,
+    10
+   ],
+   "stepSeconds": 30,
+   "maxInflight": 2000
+  },
+  "loadgen": {
+   "coresUsed": 0.22,
+   "coresAvailable": 2
+  },
+  "unfinished": 0,
+  "steps": [
+   {
+    "step": 0,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 33.3,
+     "p95": 51.2,
+     "p99": 755.2
+    },
+    "serviceMs": {
+     "p50": 32.6,
+     "p95": 50,
+     "p99": 754.8
+    },
+    "db": {
+     "newConnectionPct": 2.7,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0.1,
+      "p99": 158.5
+     },
+     "queryMs": {
+      "p50": 17.8,
+      "p95": 27.8,
+      "p99": 123.5
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 18,
+      "p95": 29.5,
+      "p99": 286.4
+     },
+     "outsideMs": {
+      "p50": 14.4,
+      "p95": 20.6,
+      "p99": 504.5
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.5,
+      "p99": 2
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 8,
+    "coldStarts": 8,
+    "peakInFlight": 1,
+    "loadgenCores": 0.03,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 1,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 30.9,
+     "p95": 36.3,
+     "p99": 40.7
+    },
+    "serviceMs": {
+     "p50": 30.2,
+     "p95": 35.7,
+     "p99": 39.7
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 17.3,
+      "p95": 18.9,
+      "p99": 20.5
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 17.6,
+      "p95": 19.4,
+      "p99": 20.8
+     },
+     "outsideMs": {
+      "p50": 11.6,
+      "p95": 17.3,
+      "p99": 19.7
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.4,
+      "p99": 0.4
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 1,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.02,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 2,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 36.6,
+     "p95": 71.2,
+     "p99": 645.8
+    },
+    "serviceMs": {
+     "p50": 35.7,
+     "p95": 68.2,
+     "p99": 602.5
+    },
+    "db": {
+     "newConnectionPct": 0.6,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0.1,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 21.9,
+      "p95": 33.8,
+      "p99": 45.2
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 22.3,
+      "p95": 34.3,
+      "p99": 51.4
+     },
+     "outsideMs": {
+      "p50": 12.4,
+      "p95": 32.5,
+      "p99": 569.7
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.4,
+      "p99": 0.7
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0.002,
+    "lateP95Ms": 1.8,
+    "environments": 256,
+    "coldStarts": 248,
+    "peakInFlight": 1,
+    "loadgenCores": 0.44,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 3,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 35.8,
+     "p95": 47.6,
+     "p99": 56.7
+    },
+    "serviceMs": {
+     "p50": 34.9,
+     "p95": 46.1,
+     "p99": 53.4
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 21.5,
+      "p95": 30.8,
+      "p99": 37.4
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 21.8,
+      "p95": 31.1,
+      "p99": 37.7
+     },
+     "outsideMs": {
+      "p50": 12.1,
+      "p95": 16.4,
+      "p99": 23.3
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0,
+    "lateP95Ms": 1.5,
+    "environments": 86,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.38,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 4,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 35.9,
+     "p95": 48.3,
+     "p99": 61.6
+    },
+    "serviceMs": {
+     "p50": 35,
+     "p95": 47.1,
+     "p99": 56.5
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 21.7,
+      "p95": 33,
+      "p99": 37.7
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 22,
+      "p95": 33.3,
+      "p99": 38
+     },
+     "outsideMs": {
+      "p50": 12,
+      "p95": 16.5,
+      "p99": 26
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0,
+    "lateP95Ms": 1.5,
+    "environments": 130,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.39,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 5,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 36.3,
+     "p95": 48.8,
+     "p99": 65.8
+    },
+    "serviceMs": {
+     "p50": 35.4,
+     "p95": 47.4,
+     "p99": 57.2
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 22,
+      "p95": 33,
+      "p99": 37.4
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 22.3,
+      "p95": 33.3,
+      "p99": 37.7
+     },
+     "outsideMs": {
+      "p50": 12,
+      "p95": 16.5,
+      "p99": 26.4
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0,
+    "lateP95Ms": 1.5,
+    "environments": 108,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.39,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 6,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 39.1,
+     "p95": 44.6,
+     "p99": 54.3
+    },
+    "serviceMs": {
+     "p50": 38.4,
+     "p95": 43.9,
+     "p99": 53.7
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 25.6,
+      "p95": 31.9,
+      "p99": 38.8
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 25.9,
+      "p95": 32,
+      "p99": 39
+     },
+     "outsideMs": {
+      "p50": 11.7,
+      "p95": 15.7,
+      "p99": 17.1
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.3,
+      "p99": 0.3
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 2,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.02,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 7,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 39.1,
+     "p95": 45,
+     "p99": 49.1
+    },
+    "serviceMs": {
+     "p50": 38.6,
+     "p95": 44.4,
+     "p99": 48.1
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 25.6,
+      "p95": 30.5,
+      "p99": 33.8
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 25.8,
+      "p95": 30.8,
+      "p99": 34.1
+     },
+     "outsideMs": {
+      "p50": 12,
+      "p95": 16.1,
+      "p99": 18.6
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.3,
+      "p99": 0.3
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 1,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.02,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 8,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 39.5,
+     "p95": 47,
+     "p99": 52.5
+    },
+    "serviceMs": {
+     "p50": 38.6,
+     "p95": 45.9,
+     "p99": 51.7
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 25.7,
+      "p95": 30.8,
+      "p99": 39.1
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 25.9,
+      "p95": 31.1,
+      "p99": 39.3
+     },
+     "outsideMs": {
+      "p50": 12.4,
+      "p95": 16.7,
+      "p99": 18.9
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.3,
+      "p99": 0.3
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 1,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.02,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 9,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 39.6,
+     "p95": 44.3,
+     "p99": 52
+    },
+    "serviceMs": {
+     "p50": 38.8,
+     "p95": 43.9,
+     "p99": 51.3
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 25.1,
+      "p95": 27.9,
+      "p99": 30
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 25.3,
+      "p95": 28.1,
+      "p99": 30.3
+     },
+     "outsideMs": {
+      "p50": 13.5,
+      "p95": 18.1,
+      "p99": 23.4
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.2,
+      "p99": 0.2
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 1,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.02,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 10,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 38.7,
+     "p95": 54.7,
+     "p99": 340.5
+    },
+    "serviceMs": {
+     "p50": 37.9,
+     "p95": 52.6,
+     "p99": 247.4
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 25,
+      "p95": 35.3,
+      "p99": 39
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 25.3,
+      "p95": 35.6,
+      "p99": 39.4
+     },
+     "outsideMs": {
+      "p50": 12.4,
+      "p95": 20.9,
+      "p99": 221.4
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0.0028,
+    "lateP95Ms": 2.6,
+    "environments": 256,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.41,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 11,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 37.5,
+     "p95": 49.5,
+     "p99": 64.6
+    },
+    "serviceMs": {
+     "p50": 36.7,
+     "p95": 48.2,
+     "p99": 58.5
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 22.6,
+      "p95": 34.2,
+      "p99": 37.8
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 22.9,
+      "p95": 34.5,
+      "p99": 38.1
+     },
+     "outsideMs": {
+      "p50": 12.2,
+      "p95": 17.3,
+      "p99": 24.7
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0,
+    "lateP95Ms": 1.5,
+    "environments": 191,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.39,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 12,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 36.8,
+     "p95": 48.7,
+     "p99": 117.1
+    },
+    "serviceMs": {
+     "p50": 36,
+     "p95": 47.4,
+     "p99": 83.5
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 21.9,
+      "p95": 30.7,
+      "p99": 37.5
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 22.2,
+      "p95": 31,
+      "p99": 37.8
+     },
+     "outsideMs": {
+      "p50": 12.5,
+      "p95": 17.9,
+      "p99": 58.5
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0.0019,
+    "lateP95Ms": 1.5,
+    "environments": 198,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.39,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 13,
+    "rate": 1500,
+    "seconds": 30,
+    "scheduled": 45000,
+    "sent": 45000,
+    "dropped": 0,
+    "completed": 45000,
+    "ok": 45000,
+    "failures": {},
+    "latencyMs": {
+     "p50": 36.8,
+     "p95": 49.3,
+     "p99": 55.2
+    },
+    "serviceMs": {
+     "p50": 36,
+     "p95": 48.2,
+     "p99": 53.5
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0.1
+     },
+     "queryMs": {
+      "p50": 21.6,
+      "p95": 34.7,
+      "p99": 37.9
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 21.9,
+      "p95": 35,
+      "p99": 38.3
+     },
+     "outsideMs": {
+      "p50": 12.4,
+      "p95": 17.1,
+      "p99": 22.3
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.4,
+      "p99": 0.5
+     },
+     "inconsistent": 0,
+     "count": 45000
+    },
+    "achievedRps": 1500,
+    "lateRate": 0,
+    "lateP95Ms": 1.4,
+    "environments": 73,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.38,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 14,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 51.4,
+     "p95": 56.5,
+     "p99": 93.8
+    },
+    "serviceMs": {
+     "p50": 50.6,
+     "p95": 55.2,
+     "p99": 87.4
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 37.9,
+      "p95": 40.3,
+      "p99": 44.3
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 38.1,
+      "p95": 40.6,
+      "p99": 44.5
+     },
+     "outsideMs": {
+      "p50": 12,
+      "p95": 16.1,
+      "p99": 20.8
+     },
+     "appOtherMs": {
+      "p50": 0.2,
+      "p95": 0.3,
+      "p99": 0.3
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0.0033,
+    "lateP95Ms": 1,
+    "environments": 4,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.03,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   },
+   {
+    "step": 15,
+    "rate": 10,
+    "seconds": 30,
+    "scheduled": 300,
+    "sent": 300,
+    "dropped": 0,
+    "completed": 300,
+    "ok": 300,
+    "failures": {},
+    "latencyMs": {
+     "p50": 51.4,
+     "p95": 55.8,
+     "p99": 63.2
+    },
+    "serviceMs": {
+     "p50": 50.6,
+     "p95": 54.9,
+     "p99": 62.4
+    },
+    "db": {
+     "newConnectionPct": 0,
+     "acquireMs": {
+      "p50": 0,
+      "p95": 0,
+      "p99": 0
+     },
+     "queryMs": {
+      "p50": 37.8,
+      "p95": 39.9,
+      "p99": 45.9
+     },
+     "queriesPerRequest": 11
+    },
+    "app": {
+     "appMs": {
+      "p50": 38,
+      "p95": 40.2,
+      "p99": 46.2
+     },
+     "outsideMs": {
+      "p50": 12,
+      "p95": 16.2,
+      "p99": 18.9
+     },
+     "appOtherMs": {
+      "p50": 0.3,
+      "p95": 0.3,
+      "p99": 0.4
+     },
+     "inconsistent": 0,
+     "count": 300
+    },
+    "achievedRps": 10,
+    "lateRate": 0,
+    "lateP95Ms": 1,
+    "environments": 1,
+    "coldStarts": 0,
+    "peakInFlight": 1,
+    "loadgenCores": 0.02,
+    "builds": [
+     "7afe79feb114eee1a4fb3974404dfa72796adbba"
+    ]
+   }
+  ]
+ }
+]

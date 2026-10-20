@@ -1,0 +1,262 @@
+{
+ "taskId": "e7adbdbae6a4463ea4fd0c67fee6e516",
+ "startedAt": "2026-10-19T15:48:49.245Z",
+ "expectedSeconds": 17700,
+ "plan": {
+  "protocol": "v2/measurement",
+  "seed": "20261020",
+  "build": "7afe79feb114eee1a4fb3974404dfa72796adbba",
+  "urls": {
+   "event-dsql-reuse": "https://jrxowkp3j2t56o4iv6hkysc3ry0zotoh.lambda-url.ap-northeast-1.on.aws",
+   "web-dsql-pool10": "https://gwbll1yk2t24ddsr.g0s.lambda-web.ap-northeast-1.on.aws",
+   "web-dsql-pool": "https://3b6qy49hxzrshrjj.g0s.lambda-web.ap-northeast-1.on.aws"
+  },
+  "cases": {
+   "A": {
+    "path": "/app/external?ms=1000",
+    "steps": [
+     25,
+     100,
+     400
+    ],
+    "stepSeconds": 45
+   },
+   "B": {
+    "mix": "/app/item:70,/app/detail?n=11:15,/app/report?k=800:5,/app/render?w=10000:5,/app/write:5",
+    "steps": [
+     50,
+     100,
+     200,
+     400
+    ],
+    "stepSeconds": 90
+   },
+   "C": {
+    "path": "/app/detail?n=11",
+    "steps": [
+     10,
+     10,
+     1500,
+     1500,
+     1500,
+     1500,
+     10,
+     10,
+     10,
+     10,
+     1500,
+     1500,
+     1500,
+     1500,
+     10,
+     10
+    ],
+    "stepSeconds": 30
+   },
+   "D": {
+    "path": "/app/report?k=800",
+    "steps": [
+     100,
+     200,
+     400
+    ],
+    "stepSeconds": 45
+   }
+  },
+  "runs": [
+   {
+    "set": 1,
+    "index": 1,
+    "case": "C",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 60
+   },
+   {
+    "set": 1,
+    "index": 2,
+    "case": "B",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 3,
+    "case": "B",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 4,
+    "case": "C",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 5,
+    "case": "D",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 6,
+    "case": "D",
+    "name": "web-dsql-pool",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 7,
+    "case": "A",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 8,
+    "case": "A",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 1,
+    "index": 9,
+    "case": "D",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 480
+   },
+   {
+    "set": 2,
+    "index": 1,
+    "case": "C",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 2,
+    "case": "C",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 3,
+    "case": "A",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 4,
+    "case": "D",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 480
+   },
+   {
+    "set": 2,
+    "index": 5,
+    "case": "D",
+    "name": "web-dsql-pool",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 6,
+    "case": "A",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 480
+   },
+   {
+    "set": 2,
+    "index": 7,
+    "case": "D",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 2,
+    "index": 8,
+    "case": "B",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 480
+   },
+   {
+    "set": 2,
+    "index": 9,
+    "case": "B",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 1,
+    "case": "B",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 2,
+    "case": "D",
+    "name": "web-dsql-pool",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 3,
+    "case": "B",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 4,
+    "case": "A",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 5,
+    "case": "C",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 480
+   },
+   {
+    "set": 3,
+    "index": 6,
+    "case": "C",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 7,
+    "case": "A",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 300
+   },
+   {
+    "set": 3,
+    "index": 8,
+    "case": "D",
+    "name": "web-dsql-pool10",
+    "waitSeconds": 960
+   },
+   {
+    "set": 3,
+    "index": 9,
+    "case": "D",
+    "name": "event-dsql-reuse",
+    "waitSeconds": 300
+   }
+  ],
+  "post": {
+   "clusterId": "xzufgtayy7lkiiup2abhk43p7a",
+   "metricsLagSeconds": 180
+  }
+ }
+}

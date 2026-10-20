@@ -28,6 +28,11 @@ export interface CaseSpec {
   mix?: string;
   steps: number[];
   stepSeconds: number;
+  /** Load generator limits (invoke.ts defaults: 256 sockets, 2,000 requests in flight). A case that needs more sets them here. */
+  maxConnections?: number;
+  maxInflight?: number;
+  /** Expected time of one request in ms (including cold starts and waits): the planner checks the generator can hold rate x this. */
+  expectedMs?: number;
 }
 export interface CaseDef extends CaseSpec {
   id: string;
@@ -167,5 +172,29 @@ export const postSeconds = (plan: Plan) => (plan.post ? POST_WINDOW_AFTER_SECOND
 export function invokeArgs(plan: Plan, run: PlanRun): string[] {
   const spec = specOf(plan, run);
   const target = spec.mix ? ["--mix", spec.mix, "--mix-seed", `${plan.seed}:${run.case}:${run.set}`] : ["--path", spec.path ?? "/noop"];
-  return [plan.urls[run.name], ...target, "--steps", spec.steps.join(","), "--step-seconds", String(spec.stepSeconds)];
+  const limits = [...(spec.maxConnections ? ["--max-connections", String(spec.maxConnections)] : []), ...(spec.maxInflight ? ["--max-inflight", String(spec.maxInflight)] : [])];
+  return [plan.urls[run.name], ...target, "--steps", spec.steps.join(","), "--step-seconds", String(spec.stepSeconds), ...limits];
+}
+
+export const DEFAULT_MAX_CONNECTIONS = 256;
+export const DEFAULT_MAX_INFLIGHT = 2000;
+/** The generator must stay well inside its limits: sockets up to 60%, requests in flight up to 80%. */
+export const CONNECTION_HEADROOM = 0.6;
+export const INFLIGHT_HEADROOM = 0.8;
+
+/**
+ * Cases whose load needs more concurrent requests (peak rate x expected time) than the generator can hold. A generator that hits its
+ * limit queues the requests itself and the step measures the generator, not the platform (the 400 RPS step of case A in v2.0 did).
+ */
+export function capacityProblems(cases: Record<string, CaseSpec>): string[] {
+  return Object.entries(cases).flatMap(([id, c]) => {
+    if (c.expectedMs === undefined) return [];
+    const needed = Math.max(...c.steps) * (c.expectedMs / 1000);
+    const conns = c.maxConnections ?? DEFAULT_MAX_CONNECTIONS;
+    const inflight = c.maxInflight ?? DEFAULT_MAX_INFLIGHT;
+    const problems: string[] = [];
+    if (needed > CONNECTION_HEADROOM * conns) problems.push(`case ${id}: about ${Math.ceil(needed)} concurrent requests at the peak, but max-connections is ${conns} (keep it above ${Math.ceil(needed / CONNECTION_HEADROOM)})`);
+    if (needed > INFLIGHT_HEADROOM * inflight) problems.push(`case ${id}: about ${Math.ceil(needed)} requests in flight at the peak, but max-inflight is ${inflight} (keep it above ${Math.ceil(needed / INFLIGHT_HEADROOM)})`);
+    return problems;
+  });
 }

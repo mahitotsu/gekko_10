@@ -1,5 +1,5 @@
 // Analyses a suite's result directory: tables, costs and the acceptance verdict (scripts/analyze.ts). Reads files only; no AWS calls.
-// Usage: npm run analyze -- results/2026-10-19 [--sets 2,3] [--json <file>]   (default: analysis.json in the directory)
+// Usage: npm run analyze -- results/measurement-20261020 [--sets 2,3] [--json <file>]   (default: analysis.json in the directory)
 import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";

@@ -1,0 +1,624 @@
+{
+ "region": "ap-northeast-1",
+ "periodSeconds": 60,
+ "start": "2026-10-19T17:08:25Z",
+ "end": "2026-10-19T17:20:41Z",
+ "clusterId": "xzufgtayy7lkiiup2abhk43p7a",
+ "series": [
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "Invocations",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     3420
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     11720
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     16360
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "Errors",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     0
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "Throttles",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     0
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "ConcurrentExecutions",
+   "stat": "Maximum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     102
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     117
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     113
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "Duration",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     893968.199475
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     2928793.385182
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     4070277.5760329994
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "Duration",
+   "stat": "Average",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     261.39421037280704
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     249.8970465172355
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     248.79447286265278
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "Duration",
+   "stat": "Maximum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     882.22
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     678.99
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     278.11
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "UrlRequestCount",
+   "stat": "Sum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     3420
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     11720
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     16360
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "UrlRequestLatency",
+   "stat": "Average",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     277.870717877193
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     257.94264945008536
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     256.63040019009776
+    ]
+   ]
+  },
+  {
+   "label": "gekko10-event-dsql-reuse",
+   "namespace": "AWS/Lambda",
+   "metric": "UrlRequestLatency",
+   "stat": "Maximum",
+   "dimensions": {
+    "FunctionName": "gekko10-event-dsql-reuse"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     1178.52579
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     967.68785
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     285.455413
+    ]
+   ]
+  },
+  {
+   "label": "dsql:connect-attempts",
+   "namespace": "AWS/Usage",
+   "metric": "CallCount",
+   "stat": "Sum",
+   "dimensions": {
+    "Type": "API",
+    "ResourceId": "cluster/xzufgtayy7lkiiup2abhk43p7a",
+    "Resource": "DbConnectAdmin",
+    "Service": "AuroraDSQL",
+    "Class": "None"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     51
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     50
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     15
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     47
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     231
+    ]
+   ]
+  },
+  {
+   "label": "dsql:connect-attempts",
+   "namespace": "AWS/Usage",
+   "metric": "CallCount",
+   "stat": "Maximum",
+   "dimensions": {
+    "Type": "API",
+    "ResourceId": "cluster/xzufgtayy7lkiiup2abhk43p7a",
+    "Resource": "DbConnectAdmin",
+    "Service": "AuroraDSQL",
+    "Class": "None"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     6
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     7
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     2
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     14
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     12
+    ]
+   ]
+  },
+  {
+   "label": "dsql:open-connections",
+   "namespace": "AWS/Usage",
+   "metric": "ResourceCount",
+   "stat": "Maximum",
+   "dimensions": {
+    "Type": "Resource",
+    "ResourceId": "cluster/xzufgtayy7lkiiup2abhk43p7a",
+    "Resource": "ClusterConnectionCount",
+    "Service": "AuroraDSQL",
+    "Class": "None"
+   },
+   "points": [
+    [
+     "2026-10-19T17:11:00.000Z",
+     101
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     116
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     116
+    ],
+    [
+     "2026-10-19T17:14:00.000Z",
+     116
+    ],
+    [
+     "2026-10-19T17:15:00.000Z",
+     116
+    ],
+    [
+     "2026-10-19T17:16:00.000Z",
+     116
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     116
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     124
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     325
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "TotalDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     795.673172375
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     4567.206794269531
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     10863.825836695314
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     1853.415317
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     0.7750153408203124
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     291.82436198925774
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     3840.799107085938
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "ComputeDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     345.89418800000004
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     1956.6461180000001
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     4645.007199
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     791.6028169999998
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     0.4569409999999998
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     62.173148
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     679.781944
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "ReadDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     449.77898437500005
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     2610.5606762695315
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     6218.818637695312
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     1061.8125
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     0.3180743408203126
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     229.65121398925996
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     3161.0171630859704
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "WriteDPU",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     0
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     0
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "TotalTransactions",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     1498
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     8015
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     18983
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     3236
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     61
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     60434
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     841613
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "ReadOnlyTransactions",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": [
+    [
+     "2026-10-19T17:10:00.000Z",
+     1498
+    ],
+    [
+     "2026-10-19T17:11:00.000Z",
+     8015
+    ],
+    [
+     "2026-10-19T17:12:00.000Z",
+     18983
+    ],
+    [
+     "2026-10-19T17:13:00.000Z",
+     3236
+    ],
+    [
+     "2026-10-19T17:17:00.000Z",
+     61
+    ],
+    [
+     "2026-10-19T17:18:00.000Z",
+     60434
+    ],
+    [
+     "2026-10-19T17:19:00.000Z",
+     841613
+    ]
+   ]
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "OccConflicts",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": []
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "QueryTimeouts",
+   "stat": "Sum",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": []
+  },
+  {
+   "label": "dsql",
+   "namespace": "AWS/AuroraDSQL",
+   "metric": "CommitLatency",
+   "stat": "Average",
+   "dimensions": {
+    "ClusterId": "xzufgtayy7lkiiup2abhk43p7a"
+   },
+   "points": []
+  }
+ ]
+}

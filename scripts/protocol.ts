@@ -3,7 +3,10 @@
 // The request parameters (n, k, w, ms) are fixed by the calibration (docs/plan.md §8) and must not change between the sets.
 import type { CaseDef } from "./suite-plan.js";
 
-export const PROTOCOL = "v2";
+// v2.0 (results/measurement-20261020) ran cases A and C with the generator's default limits (256 sockets): the 400 RPS step of A and the
+// first spike of C needed more, so A's top step is invalid and C's Event environment counts are lower bounds. v2.1 sets the limits per
+// case and the planner checks them (capacityProblems). The plan of a measurement is saved with its results (suite.plan.json).
+export const PROTOCOL = "v2.1";
 
 const APP_CONFIGS = ["event-dsql-reuse", "web-dsql-pool10"];
 
@@ -17,7 +20,8 @@ const report = `/app/report?k=${PARAMS.reportK}`;
 /** The measurement (3 sets, the first one is the warm-up). */
 export const MEASUREMENT: CaseDef[] = [
   // A: a request that waits on an external call (an API, an LLM) between two database calls.
-  { id: "A", path: `/app/external?ms=${PARAMS.externalMs}`, configs: APP_CONFIGS, steps: [25, 100, 400], stepSeconds: 45 },
+  // 400 RPS x 1.05 s is about 420 requests at once, more than the default 256 sockets can carry.
+  { id: "A", path: `/app/external?ms=${PARAMS.externalMs}`, configs: APP_CONFIGS, steps: [25, 100, 400], stepSeconds: 45, maxConnections: 1000, maxInflight: 3000, expectedMs: 1050 },
   // B: a typical API: mostly single lookups, some N+1 pages, a few heavy reports, CPU-bound rendering and writes.
   {
     id: "B",
@@ -27,7 +31,8 @@ export const MEASUREMENT: CaseDef[] = [
     stepSeconds: 90,
   },
   // C: a sudden spike from a trickle: the first spike meets cold functions, the second one warm functions.
-  { id: "C", path: detail, configs: APP_CONFIGS, steps: [10, 10, 1500, 1500, 1500, 1500, 10, 10, 10, 10, 1500, 1500, 1500, 1500, 10, 10], stepSeconds: 30 },
+  // The first spike meets cold functions: requests wait about 0.7 s for a new environment, so up to ~1,000 are in flight at once.
+  { id: "C", path: detail, configs: APP_CONFIGS, steps: [10, 10, 1500, 1500, 1500, 1500, 10, 10, 10, 10, 1500, 1500, 1500, 1500, 10, 10], stepSeconds: 30, maxConnections: 2000, maxInflight: 4000, expectedMs: 700 },
   // D: a heavy aggregate only: the database work held per request is long enough for a pool of 10 to run short. The DPU of the
   // aggregate (0.58 per request) is the main cost, so the steps are short and start at 100 RPS (12.5 to 100 requests in the database at once).
   { id: "D", path: report, configs: [...APP_CONFIGS, "web-dsql-pool"], steps: [100, 200, 400], stepSeconds: 45 },

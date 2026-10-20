@@ -3,7 +3,7 @@
 // It only reads the log, so it needs no timely access to metrics. If the task's post-processing failed, the metrics of the runs
 // are collected here instead (AWS CLI, 1-minute metrics are kept for about 15 days).
 //
-//   npm run suite-fetch -- --task <task id> [--out results/2026-10-19] [--wait] [--skip-metrics]
+//   npm run suite-fetch -- --task <task id> [--out results/measurement-20261020] [--wait] [--skip-metrics]
 //
 // Logs are kept for 30 days (Gekko10LoadStack).
 import { execFileSync } from "node:child_process";

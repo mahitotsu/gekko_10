@@ -4,6 +4,7 @@ import {
   GAP_SECONDS,
   MIN_SAME_FUNCTION_IDLE_SECONDS,
   buildPlan,
+  capacityProblems,
   estimateSeconds,
   invokeArgs,
   runDuration,
@@ -114,5 +115,40 @@ describe("invokeArgs", () => {
     expect(a.slice(1)).toEqual(b.slice(1));
     expect(a).toContain("--mix");
     expect(a[a.indexOf("--mix-seed") + 1]).toBe("s:B:2");
+  });
+});
+
+describe("generator limits", () => {
+  it("passes the per-case limits to invoke", () => {
+    const withLimits = buildPlan({
+      ...base,
+      cases: [{ id: "A", path: "/x", configs: ["event-dsql-reuse"], steps: [400], stepSeconds: 45, maxConnections: 1000, maxInflight: 3000 }],
+      sets: [2],
+    });
+    expect(invokeArgs(withLimits, withLimits.runs[0]).slice(-4)).toEqual(["--max-connections", "1000", "--max-inflight", "3000"]);
+    const without = buildPlan({ ...base, sets: [2] });
+    expect(invokeArgs(without, without.runs[0])).not.toContain("--max-connections");
+  });
+
+  it("flags a case whose peak concurrency (rate x expected time) does not fit the generator, and accepts one that does", () => {
+    const spec = { steps: [25, 400], stepSeconds: 45, expectedMs: 1050 };
+    // 400 RPS x 1.05 s = 420 at once: the default 256 sockets (usable: 153) cannot carry it
+    const bad = capacityProblems({ A: spec });
+    expect(bad).toHaveLength(1);
+    expect(bad[0]).toContain("case A");
+    expect(bad[0]).toContain("max-connections is 256");
+    expect(capacityProblems({ A: { ...spec, maxConnections: 1000, maxInflight: 3000 } })).toEqual([]);
+    // enough sockets but too few requests allowed in flight: 2,000 RPS x 1.05 s = 2,100 at once
+    expect(capacityProblems({ A: { ...spec, steps: [2000], maxConnections: 5000 } }).join()).toContain("max-inflight is 2000");
+  });
+
+  it("says nothing about a case without an expected time", () => {
+    expect(capacityProblems({ A: { steps: [4000], stepSeconds: 45 } })).toEqual([]);
+  });
+
+  it("the measurement definition fits the generator", async () => {
+    const { MEASUREMENT } = await import("../scripts/protocol.js");
+    const specs = Object.fromEntries(MEASUREMENT.map(({ id, configs: _c, ...spec }) => [id, spec]));
+    expect(capacityProblems(specs)).toEqual([]);
   });
 });

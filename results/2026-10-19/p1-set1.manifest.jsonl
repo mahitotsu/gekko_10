@@ -1,6 +1,0 @@
-{"set":1,"seed":"20261019","index":1,"name":"event-noop","previous":null,"gapSeconds":60,"prefix":"p1-set1-1-event-noop","startedAt":"2026-10-18T16:12:27.350Z","stoppedAt":"2026-10-18T16:22:58.964Z","exitCode":"0"}
-{"set":1,"seed":"20261019","index":2,"name":"web-dsql-each","previous":"event-noop","gapSeconds":300,"prefix":"p1-set1-2-web-dsql-each","startedAt":"2026-10-18T16:27:59.040Z","stoppedAt":"2026-10-18T16:38:30.001Z","exitCode":"0"}
-{"set":1,"seed":"20261019","index":3,"name":"event-dsql-each","previous":"web-dsql-each","gapSeconds":900,"prefix":"p1-set1-3-event-dsql-each","startedAt":"2026-10-18T16:53:30.100Z","stoppedAt":"2026-10-18T17:04:01.262Z","exitCode":"0"}
-{"set":1,"seed":"20261019","index":4,"name":"event-dsql-reuse","previous":"event-dsql-each","gapSeconds":900,"prefix":"p1-set1-4-event-dsql-reuse","startedAt":"2026-10-18T17:19:01.360Z","stoppedAt":"2026-10-18T17:29:34.199Z","exitCode":"0"}
-{"set":1,"seed":"20261019","index":5,"name":"web-noop","previous":"event-dsql-reuse","gapSeconds":300,"prefix":"p1-set1-5-web-noop","startedAt":"2026-10-18T17:34:34.270Z","stoppedAt":"2026-10-18T17:45:05.947Z","exitCode":"0"}
-{"set":1,"seed":"20261019","index":6,"name":"web-dsql-pool","previous":"web-noop","gapSeconds":300,"prefix":"p1-set1-6-web-dsql-pool","startedAt":"2026-10-18T17:50:06.020Z","stoppedAt":"2026-10-18T18:00:38.795Z","exitCode":"0"}

@@ -22,6 +22,9 @@
 - 課金はリクエスト数、アクティブな CPU 時間、環境が存在する間のメモリ、データ転送。 [DG web-functions.html]
 - 現時点の対応は Node.js のみ（`nodejs24.x`、arm64）。 [DG web-functions-runtimes.html]
 - 東京（ap-northeast-1）で利用可能（us-east-1/us-east-2/us-west-2/eu-west-1 も）。 [Blog]
+- 「実行環境」（execution environment）は、Event Functions と Web Functions の両方で使われる語。 [DG lambda-runtime-environment.html] [DG web-functions-how-it-works.html]（取得 2026-10-21）
+  - Event: 実行環境で関数を呼び出し、ウォーム状態の環境を再利用する。ログの記述に「Lambda Event Functions」とある。
+  - Web: 実行環境は、Web サーバーとアプリが動く隔離された計算インスタンスで、1 つで複数の HTTP リクエストを並列に処理する。
 - 他の形態: Event Functions（従来型）、MicroVMs（隔離されたステートフルな実行環境）。 [Blog]
 
 ## 2. リソースモデル

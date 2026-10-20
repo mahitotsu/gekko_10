@@ -116,17 +116,25 @@ export interface StackSegment {
 export interface StackChart {
   title: string;
   desc: string;
+  yLabel: string;
   bars: { label: string; segments: StackSegment[] }[];
-  xMax: number;
+  yMax: number;
+  ticks: number[];
   note?: string;
 }
 
-/** Horizontal stacked bars (one per platform): the segments are the parts of one response time, a 2px gap between them. */
-export function stackedBars(c: StackChart): string {
-  const H = 90 + c.bars.length * 56 + (c.note ? 24 : 0);
-  const left = 96, right = 64, top = 64;
-  const pxPerMs = (W - left - right) / c.xMax;
-  let body = text(left, 22, "応答時間の中央値（ms）の内訳", "ink2", 12);
+/** Stacked columns (one per platform), the same axes as groupedColumns: the segments are the parts of one response time, the first segment on top, a 2px gap between them, the total at the cap. */
+export function stackedColumns(c: StackChart): string {
+  const H = 400;
+  const left = 64, right = 24, top = 64, bottom = 78;
+  const base = H - bottom;
+  const slot = (W - left - right) / c.bars.length;
+  const bw = 72;
+  const scale = (base - top) / c.yMax;
+  let body = "";
+  for (const t of c.ticks) body += `<line class="grid" x1="${left}" x2="${W - right}" y1="${r1(base - t * scale)}" y2="${r1(base - t * scale)}"/>` + text(left - 8, base - t * scale + 4, String(t), "ink2", 11, "end");
+  body += `<line class="axis" x1="${left}" x2="${W - right}" y1="${base}" y2="${base}"/>`;
+  body += text(left, 22, c.yLabel, "ink2", 12);
   let lx = left;
   const names = [...new Map(c.bars.flatMap((b) => b.segments).map((s) => [s.name, s.cls])).entries()];
   for (const [name, cls] of names) {
@@ -134,21 +142,20 @@ export function stackedBars(c: StackChart): string {
     lx += 16 + name.length * 13 + 24;
   }
   c.bars.forEach((b, bi) => {
-    const y = top + bi * 56;
-    body += text(left - 10, y + 17, b.label, "ink", 13, "end", 600);
-    let x = left;
-    b.segments.forEach((s, si) => {
-      const w = Math.max(s.ms * pxPerMs - 2, 0);
-      if (w > 0) {
-        const last = si === b.segments.length - 1;
-        body += last ? `<path class="${s.cls}" d="M${r1(x)},${y} L${r1(x + w - 4)},${y} A4,4 0 0 1 ${r1(x + w)},${y + 4} L${r1(x + w)},${y + 20} A4,4 0 0 1 ${r1(x + w - 4)},${y + 24} L${r1(x)},${y + 24} Z"/>` : `<rect class="${s.cls}" x="${r1(x)}" y="${y}" width="${r1(w)}" height="24"/>`;
-        if (w > 44) body += text(x + w / 2, y + 16, s.ms.toFixed(1), "onfill", 12, "middle", 600);
+    const x = left + slot * bi + slot / 2 - bw / 2;
+    let y = base; // the top edge of what is drawn so far; the last segment of the list goes at the bottom
+    [...b.segments].reverse().forEach((s, si, rev) => {
+      const h = Math.max(s.ms * scale - 2, 0);
+      if (h > 0) {
+        const topmost = si === rev.length - 1;
+        body += topmost ? column(x, y, h, bw, s.cls) : `<rect class="${s.cls}" x="${r1(x)}" y="${r1(y - h)}" width="${bw}" height="${r1(h)}"/>`;
+        if (h > 18) body += text(x + bw / 2, y - h / 2 + 4, s.ms.toFixed(1), "onfill", 12, "middle", 600);
       }
-      x += s.ms * pxPerMs;
+      y -= s.ms * scale;
     });
-    body += text(x + 6, y + 17, `${b.segments.reduce((n, s) => n + s.ms, 0).toFixed(1)} ms`, "ink", 12, "start", 600);
+    body += text(x + bw / 2, y - 6, `${b.segments.reduce((n, s) => n + s.ms, 0).toFixed(1)}`, "ink", 11, "middle", 600);
+    body += text(x + bw / 2, base + 20, b.label, "ink2", 12, "middle");
   });
-  body += `<line class="axis" x1="${left}" x2="${left}" y1="${top - 6}" y2="${top + c.bars.length * 56 - 12}"/>`;
   if (c.note) body += text(left, H - 10, c.note, "ink2", 11);
   return frame(c.title, c.desc, H, body);
 }
@@ -182,14 +189,16 @@ export function figures(a: Pick<Analysis, "runs">): Record<string, string> {
     { name: "アプリ内（DB 以外）", cls: "s4", ms: item(name, (p) => p.appOtherP50) },
     { name: "DB", cls: "s5", ms: item(name, (p) => (p.acquireP50 ?? 0) + (p.queryP50 ?? 0)) },
   ];
-  out["fig2-latency.svg"] = stackedBars({
+  out["fig2-latency.svg"] = stackedColumns({
     title: "軽い読み取りの応答時間の内訳",
     desc: "同じ読み取りで、Web は Event より約 7 ms 短い。DB とアプリ内の時間は同じで、差はすべて経路の時間にある。",
     bars: [
       { label: "Event", segments: seg(ev) },
       { label: "Web", segments: seg(w10) },
     ],
-    xMax: 18,
+    yLabel: "応答時間の中央値（ms）の内訳",
+    yMax: 18,
+    ticks: [0, 6, 12, 18],
     note: "ケース B の item（400 RPS）、2 セットの平均。合計は各部分の中央値の和で、全体の中央値とは少し違う。",
   });
 
@@ -225,6 +234,23 @@ export function figures(a: Pick<Analysis, "runs">): Record<string, string> {
     ticks: [0, 40, 80, 120, 160],
     fmt: (n) => String(Math.round(n)),
     note: "2 セットの平均。プール 64 は、ケース D だけで測った。",
+  });
+
+  const connects = (c: string, name: string) => mean(measured(runs, c, name).map((r) => r.total.dsqlConnectCalls));
+  out["fig5-connections.svg"] = groupedColumns({
+    title: "DSQL への接続の試行回数",
+    desc: "Event は、環境ごとに 1 本の接続を張るので、試行回数は環境数と同じ程度になる。Web は、ケース A では少ないが、急なスパイクのケース C では Event より多い。",
+    yLabel: "1 回の実行（1 構成・1 セット）あたりの接続の試行回数",
+    groups: [["A 外部 I/O"], ["B 混在"], ["C 急なスパイク"], ["D 重い集計"]],
+    series: [
+      { name: "Event", cls: "s1", values: ["A", "B", "C", "D"].map((c) => connects(c, ev)) },
+      { name: "Web（プール 10）", cls: "s2", values: ["A", "B", "C", "D"].map((c) => connects(c, w10)) },
+      { name: "Web（プール 64）", cls: "s3", values: ["A", "B", "C", "D"].map((c) => (c === "D" ? connects(c, w64) : null)) },
+    ],
+    yMax: 900,
+    ticks: [0, 300, 600, 900],
+    fmt: (n) => String(Math.round(n)),
+    note: "2 セットの平均。A は無効にした 400 RPS の段の途中まで、C の Event は生成側の上限で頭打ちの下限値。",
   });
   return out;
 }

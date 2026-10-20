@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 // esbuild puts every module of a bundle into one file, where `import.meta.url` is the bundle's own URL for all of them: a module
@@ -10,5 +10,14 @@ describe("modules bundled into the load task", () => {
   ])("scripts/%s has no entry-point check of its own", (name) => {
     const file = name === "build-id" ? "build-id.mjs" : `${name}.ts`;
     expect(readFileSync(new URL(`../scripts/${file}`, import.meta.url), "utf8")).not.toMatch(/import\.meta\.url\s*===/);
+  });
+});
+
+// src/ is an input of the build id (scripts/build-id.mjs). A comment that points at a document would change the build id
+// whenever the document is renamed, and the measurement would then demand a redeploy for no change in behavior.
+describe("build inputs", () => {
+  it("src/ does not refer to documents", () => {
+    const hits = readdirSync("src").filter((f) => /docs\/|\.md\b|CLAUDE/.test(readFileSync(`src/${f}`, "utf8")));
+    expect(hits).toEqual([]);
   });
 });

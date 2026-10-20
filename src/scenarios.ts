@@ -1,7 +1,7 @@
 // Application-shaped endpoints (/app/*): what a request to a real API looks like, as opposed to the single lookup of /db/read.
 // Each scenario is a sequence of Db.run calls (a pooled connection is borrowed and returned per statement, like pool.query),
 // plus a wait or some CPU work where the scenario calls for it. The parameters (n, k, w, ms) are request parameters, so they
-// can be tuned without redeploying (docs/plan.md §8).
+// can be tuned without redeploying.
 import { createHash, randomUUID } from "node:crypto";
 import { DB_ROWS, type Db, type DbTrace } from "./db.js";
 
@@ -14,7 +14,7 @@ export function intParam(raw: string | undefined, name: string, def: number, min
   return Number(raw);
 }
 
-/** Defaults; docs/plan.md §8 records the values fixed after calibration. */
+/** Defaults. */
 export const DEFAULTS = {
   /** /app/detail: statements per request (1 + N related lookups). */
   detailQueries: 11,

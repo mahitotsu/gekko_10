@@ -76,6 +76,7 @@ CloudFormation のロールバックは時間がかかる。デプロイの前�
   - 足りないケースは、`maxConnections` / `maxInflight` を指定する（`capacityProblems` が、計画の段階で拒否する）。
   - 足りないと、その段は生成側を測ってしまい、`lateRate` には出ない（findings §3-7）。
 - Web の動的な同時実行数の学習は関数に保持される。**測定期間中は Web スタックを destroy しない**。コードを変えるとリビジョンが置き換わる。
+- **版の入力（`src/`、`scripts/bundle.mjs`、`scripts/build-id.mjs`、`package-lock.json`）には、文書への参照やリンクを書かない**。変えると版が変わり、動作が同じでも再デプロイが要る（`test/entrypoints.test.ts` が `src/` を検査する）。文書の移動や改名で版を動かさない。
 - 構成ごとに別の関数にする（Web はメトリクスにリビジョンの次元がない）。構成は `lib/event-stack.ts` / `lib/web-stack.ts` のリストに 1 行足す。
 - ウォームアップ回を捨てる。生成側が飽和した結果は採用しない（`loadgenCoresUsed` が `loadgenCoresAvailable` に近い）。
 - 毎回接続で DSQL の接続レート（100/秒）に達したら、回避せず結果として記録する（53400 と 53300 を区別する）。

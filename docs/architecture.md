@@ -9,18 +9,20 @@
 - 確かめた事実: [findings.md](findings.md)
 - 用語: [用語集](glossary.md)
 
-## 1. 全体像
-同じ Hono アプリを、Lambda の 2 つの形態（Event Functions + 関数URL、Web Functions）で動かし、Aurora DSQL に接続する構成を比較する。リージョンは ap-northeast-1。
+## 要旨
+同じ Hono アプリを、Event（関数URL）と Web の 2 形態で動かし、どちらも Aurora DSQL につなぐ。構成は 4 つのスタックに分かれる。負荷は東京の Fargate タスクがかけ、測定は 1 つのタスクが最後まで進める。
 
-```
- 東京の Fargate タスク (invoke.ts, SigV4)
-        │
-        ├─▶ Event Functions + 関数URL ─┐
-        │      (noop / dsql-each / dsql-reuse)
-        │                              ├─▶ Aurora DSQL (パブリックエンドポイント)
-        └─▶ Web Functions エンドポイント ─┘
-               (noop / dsql-each / dsql-pool)
-```
+| 知りたいこと | 読む節 |
+|---|---|
+| 全体の形、スタックの依存 | 1、4 |
+| どの関数が、どの接続の持ち方か | 3、6 |
+| 応答の項目、`/app/*` の中身 | 5 |
+| 負荷生成と、測定の進行の仕組み | 7 |
+
+## 1. 全体像
+同じコードを 2 つの形態に載せ、1 つの DSQL を共有する。リージョンは ap-northeast-1。
+
+![全体の構成](figures/arch-overview.svg)
 
 ## 2. アプリ
 | パス | 役割 |
@@ -32,21 +34,24 @@
 | `src/entry-event.ts` | Event Functions 用。`hono/aws-lambda` の `handle()` |
 | `scripts/bundle.mjs` | 両方を同じ esbuild 設定でバンドル（`dist/web`, `dist/event`） |
 
+![アプリのビルド](figures/arch-build.svg)
+
 - LWA（Lambda Web Adapter）は使わない。
 
 ## 3. 関数の一覧
-| 関数 | 形態 | `DB_MODE` | 接続の持ち方 |
-|---|---|---|---|
-| `gekko10-event-noop` | Event (1 GB) | なし | DB なし |
-| `gekko10-event-dsql-each` | Event (1 GB) | `each` | リクエストごとに接続して閉じる |
-| `gekko10-event-dsql-reuse` | Event (1 GB) | `reuse` | 環境内で 1 接続を保持して再利用（55 分で張り直す。切れていたら 1 回だけ再接続して再試行） |
-| `gekko10-web-noop` | Web | なし | DB なし |
-| `gekko10-web-dsql-each` | Web | `each` | リクエストごとに接続して閉じる |
-| `gekko10-web-dsql-pool` | Web | `pool` | 環境内で `AuroraDSQLPool` を共有（`DB_POOL_MAX` = 64 = maxConcurrencyPerEnvironment。プールの待ちが起きない対照） |
-| `gekko10-web-dsql-pool10` | Web | `pool` | 同上で `DB_POOL_MAX` = 10（node-postgres の既定値、AWS の推奨範囲 10〜20 の下限。実際のアプリに近い設定） |
+関数は、形態（Event / Web）と接続の持ち方（`DB_MODE`）の組み合わせで決まる。名前は `gekko10-<形態>-<構成>`。
 
+| 接続の持ち方 | Event（1 GB） | Web |
+|---|---|---|
+| DB なし | `event-noop` | `web-noop` |
+| リクエストごとに接続（`each`） | `event-dsql-each` | `web-dsql-each` |
+| 環境内で再利用（`reuse`：1 接続） | `event-dsql-reuse` | なし |
+| 環境内でプールを共有（`pool`） | なし | `web-dsql-pool`（上限 64）、`web-dsql-pool10`（上限 10） |
+
+- 比較の主役は、`event-dsql-reuse` と `web-dsql-pool10`（[用語集](glossary.md)の Event と Web（プール 10））。
+- `web-dsql-pool` は、プールの待ちが起きない対照（上限 64 = maxConcurrencyPerEnvironment）。`pool10` の 10 は node-postgres の既定値で、AWS の推奨範囲 10〜20 の下限。実際のアプリに近い設定。
+- Event に `reuse` を入れるのは、「Web で接続を共有する効果」と「単に接続を使い回す効果」を切り分けるため。Event は 1 環境が同時に 1 リクエストしか処理しないので、プールは実質 1 接続になる。
 - Web は構成ごとに別の関数にする。メトリクスにリビジョンの次元がなく、動的な同時実行数の学習が関数単位だから。
-- Event に `reuse` を入れるのは、「Web で接続を共有する効果」と「単に接続を使い回す効果」を切り分ける対照のため。Event は 1 環境が同時に 1 リクエストしか処理しないので、プールは実質 1 接続になる。
 - Event のメモリ違い（512 MB / 3.5 GB）と Web の maxConcurrency 違い（16 / 128）は、まだ作っていない（[plan.md](internal/plan.md) §2）。
 
 ## 4. スタック
@@ -57,12 +62,17 @@
 | `Gekko10WebStack` | Web の全関数（`lib/web-stack.ts` の構成リスト）。関数ごとに専用の S3 バケット（バージョニング有効） |
 | `Gekko10LoadStack` | 負荷生成の Fargate タスク定義（§7）。他のスタックに依存しない |
 
-- Event と Web は Db スタックの出力（エンドポイントと ARN）を参照する。CDK が依存を付ける。Event と Web の間に依存はない。デプロイは Db → Event/Web、削除は Event/Web → Db の順。
+![スタックの依存](figures/arch-stacks.svg)
+
+- Event と Web が Db の出力を参照する（図の矢印は、出力を渡す向き）。Event と Web の間、Load との間に依存はない。デプロイは Db → Event/Web、削除は Event/Web → Db の順。
 - 構成を足すときは、構成リストに 1 行足す。
 - Web Functions の CDK は L1（`CfnWebFunction`, `CfnWebFunctionRevision`, `CfnWebFunctionEndpoint`）。L2 はない。
 
 ## 5. エンドポイントとレスポンス
 `/noop` と `/wait` は次の JSON を返す。
+
+<details>
+<summary>応答のフィールド（表）</summary>
 
 | フィールド | 意味 |
 |---|---|
@@ -77,6 +87,8 @@
 | `appMs` | ハンドラの中で使った時間（応答を作る直前まで）。クライアントの時間から引くと、経路の時間（ネットワーク・入口の処理・関数の呼び出し）が出る |
 | `bootMs` | プロセスの開始からアプリの読み込みが終わるまでの時間（環境ごとに一定） |
 | `build` | この関数のコードの版。`src/`・`scripts/bundle.mjs`・`scripts/build-id.mjs`・`package-lock.json` を最後に変えたコミットの SHA（未コミットの変更があれば末尾に `-dirty`）。`scripts/build-id.mjs` が計算し、`scripts/bundle.mjs` が埋め込む |
+
+</details>
 
 `/wait?ms=N` の N は 0〜25000 の整数。範囲外・不正は 400。
 
@@ -103,6 +115,9 @@
 
 上のフィールドに加えて、`rows` と `db` を返す。
 
+<details>
+<summary><code>db</code> のフィールド（表）</summary>
+
 | `db` のフィールド | 意味 |
 |---|---|
 | `mode` | `each` / `reuse` / `pool` |
@@ -116,16 +131,24 @@
 | `envConnectionsCreated` | この環境が作った接続の通算数 |
 | `envConnectErrors` | この環境での接続エラーの通算数。`53400`（接続レート）/ `53300`（接続の総数）/ `other` |
 
+</details>
+
 失敗したときは 503 を返す。本文は、`ok:false`、`error`、`code`（上の 3 分類）、`sqlstate`、`phase`（`connect` / `query`）。同じ内容を、1 行の JSON ログ（`"event":"db_error"`）にも出す。
 
 - 成功したリクエストは、ログに出さない（負荷試験でのログ量を抑えるため）。
 - DSQL が接続の拒否を SQLSTATE `53400` / `53300` で返すかは未確認。そのため、メッセージ（`rate exceeded` / `too many open connections`）でも判定している。
 
 ## 6. DSQL の接続層（`src/db.ts`）
-- 3 モードとも公式コネクタ `@aws/aurora-dsql-node-postgres-connector` を使い、実装の差を作らない。違いは接続の持ち方だけ。
-- `each`: リクエストごとに `AuroraDSQLClient` を作り、`connect()` → 問い合わせ → `end()`。
-- `reuse`: 環境内で `AuroraDSQLClient` を 1 つ保持する。`error` / `end` イベント、または 55 分を超えたら破棄して次のリクエストで接続し直す。接続が切れていた場合は 1 回だけ再接続して再試行し、`reconnected: true` を返す。
-- `pool`: 環境内で `AuroraDSQLPool` を 1 つ共有する（初回の使用時に作る）。アイドルは 60 秒で閉じ、接続の最長は 3,300 秒。`error` イベントのリスナーを必ず登録する（登録しないとプロセスが落ちる）。
+3 モードは、公式コネクタ `@aws/aurora-dsql-node-postgres-connector` を共通に使い、違いは接続の持ち方だけ。
+
+![接続の持ち方 3 モード](figures/arch-modes.svg)
+
+| モード | 動き |
+|---|---|
+| `each` | リクエストごとに `AuroraDSQLClient` を作り、`connect()` → 問い合わせ → `end()` |
+| `reuse` | 環境内で `AuroraDSQLClient` を 1 つ保持する。`error` / `end` イベント、または 55 分を超えたら破棄して、次のリクエストで接続し直す。切れていた場合は 1 回だけ再接続して再試行し、`reconnected: true` を返す |
+| `pool` | 環境内で `AuroraDSQLPool` を 1 つ共有する（初回の使用時に作る）。アイドルは 60 秒で閉じ、接続の最長は 3,300 秒。`error` イベントのリスナーを必ず登録する（登録しないとプロセスが落ちる） |
+
 - 認証は admin ロール（`dsql:DbConnectAdmin`）。認証情報はコネクタの既定（`fromNodeProviderChain`）に任せる。
 - テーブルは `items (id integer PRIMARY KEY, payload text)` に 1,000 行（payload 100 バイト）。`scripts/db-setup.ts` が冪等に作る。
 - テストでは、DB へのアクセスを `createApp({ db })` に注入して偽の実装を使う（`test/db.test.ts`）。
@@ -158,6 +181,8 @@
 
 ### 7-2. 測定を 1 つのタスクで最後まで流す仕組み
 数時間かかる測定を、ローカル PC のスリープや AWS の認証の期限に左右されずに行うための仕組み。測定の定義は `scripts/protocol.ts`（ケース × 構成 × 段）、計画は `scripts/suite-plan.ts`。使い方は [runbook.md](runbook.md) の「較正と測定を流す」。
+
+![測定の進行](figures/arch-suite.svg)
 
 | スクリプト | 動く場所 | 役割 |
 |---|---|---|

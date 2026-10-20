@@ -14,7 +14,8 @@
     "suite-start": "tsx scripts/suite-start.ts",
     "suite-fetch": "tsx scripts/suite-fetch.ts",
     "analyze": "tsx scripts/analyze-cli.ts",
-    "report-figures": "tsx scripts/report-figures.ts"
+    "report-figures": "tsx scripts/report-figures.ts",
+    "architecture-figures": "tsx scripts/architecture-figures.ts"
   },
   "dependencies": {
     "@aws/aurora-dsql-node-postgres-connector": "^0.1.9",
